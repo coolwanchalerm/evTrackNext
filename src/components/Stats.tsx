@@ -4,7 +4,7 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend,
   PieChart, Pie, Cell,
 } from 'recharts';
-import { Home, MapPin, Trash2, Edit2, Zap, Layers, FolderOpen, TrendingUp, BarChart2, PieChartIcon } from 'lucide-react';
+import { Home, MapPin, Trash2, Edit2, Zap, FolderOpen, TrendingUp, BarChart2, PieChartIcon } from 'lucide-react';
 
 interface StatsProps {
   logs: EvLog[];

@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { fetchLogs, deleteLog, updateLog, isSupabaseConnected } from './lib/supabase';
+import { fetchLogs, deleteLog } from './lib/supabase';
 import type { EvLog } from './data/seedData';
 import { Stats } from './components/Stats';
 import { Record } from './components/Record';
@@ -12,7 +12,6 @@ function App() {
   const [logs, setLogs] = useState<EvLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabType>('stats');
-  const [isCloud, setIsCloud] = useState(false);
   const [editingLog, setEditingLog] = useState<EvLog | null>(null);
 
   const loadData = async () => {
@@ -20,7 +19,6 @@ function App() {
     try {
       const data = await fetchLogs();
       setLogs(data);
-      setIsCloud(isSupabaseConnected());
     } catch (e) {
       console.error('Failed to load logs', e);
     } finally {
