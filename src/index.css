@@ -1,0 +1,79 @@
+@import "tailwindcss";
+
+
+@layer base {
+  body {
+    @apply bg-sky-50 text-slate-800 antialiased selection:bg-sky-200;
+    font-family: 'IBM Plex Sans Thai', 'Noto Sans Thai', sans-serif;
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+/* Smooth scrollbars */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 9999px; }
+
+/* Blue sky header gradient */
+.header-gradient {
+  background: linear-gradient(145deg, #38BDF8 0%, #0EA5E9 40%, #0284C7 100%);
+}
+
+/* Card sheet style */
+.sheet-card {
+  background: #ffffff;
+  border-radius: 24px 24px 0 0;
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.06);
+}
+
+/* Pill tab active */
+.pill-active {
+  background: #0EA5E9;
+  color: #ffffff;
+}
+.pill-inactive {
+  background: transparent;
+  color: #64748b;
+  border: 1.5px solid #CBD5E1;
+}
+
+/* EV Icon box */
+.ev-icon-box {
+  background: linear-gradient(135deg, #E0F2FE, #BAE6FD);
+  color: #0284C7;
+}
+
+/* Success badge */
+.badge-success {
+  background: #DCFCE7;
+  color: #15803D;
+}
+
+/* Bottom nav */
+.bottom-nav-active {
+  color: #0EA5E9;
+}
+.bottom-nav-active-bg {
+  background: #E0F2FE;
+  border-radius: 12px;
+}
+
+/* Center FAB button */
+.fab-btn {
+  background: linear-gradient(135deg, #38BDF8, #0EA5E9);
+  box-shadow: 0 4px 16px rgba(14, 165, 233, 0.45);
+}
+
+/* Stat card gradient variant */
+.stat-blue {
+  background: linear-gradient(135deg, #0EA5E9 0%, #0284C7 100%);
+}
+.stat-teal {
+  background: linear-gradient(135deg, #1D4ED8 0%, #4338CA 100%);
+}
+.stat-amber {
+  background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+}
+.stat-violet {
+  background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
+}
