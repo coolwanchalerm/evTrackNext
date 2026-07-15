@@ -94,30 +94,30 @@ function App() {
       <div className="w-full max-w-md h-full sm:h-auto sm:min-h-[850px] sm:max-h-[850px] bg-sky-50 flex flex-col relative sm:rounded-3xl sm:shadow-2xl sm:overflow-hidden">
 
         {/* ─── Blue Gradient Header ─── */}
-        <div className="header-gradient px-5 pt-12 pb-16 relative overflow-hidden shrink-0">
+        <div className="header-gradient px-5 pt-8 pb-10 relative overflow-hidden shrink-0">
           <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-white/10" />
           <div className="absolute top-6 -right-6 w-24 h-24 rounded-full bg-white/08" />
 
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-3">
             {/* Logo */}
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-white/20 rounded-xl flex items-center justify-center">
-                <Zap className="h-5 w-5 text-white" />
+              <div className="w-7 h-7 bg-white/20 rounded-xl flex items-center justify-center">
+                <Zap className="h-4 w-4 text-white" />
               </div>
-              <span className="text-white font-bold text-lg tracking-wide">evTrack</span>
+              <span className="text-white font-bold text-base tracking-wide">evTrack</span>
             </div>
             {/* ยอดรวมเดือนนี้ */}
             <div className="text-right">
-              <p className="text-[10px] text-sky-200 font-medium tracking-wider uppercase">ยอดรวมเดือนนี้</p>
-              <p className="text-white font-bold text-2xl leading-tight">
+              <p className="text-[9px] text-sky-200 font-medium tracking-wider uppercase">ยอดรวมเดือนนี้</p>
+              <p className="text-white font-bold text-xl leading-tight">
                 {currentMonthTotal.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
-                <span className="text-base font-normal text-sky-200 ml-1">฿</span>
+                <span className="text-sm font-normal text-sky-200 ml-1">฿</span>
               </p>
             </div>
           </div>
 
-          <h1 className="text-white font-bold text-2xl leading-tight">{current.title}</h1>
-          <p className="text-sky-100 text-sm mt-1">{current.subtitle}</p>
+          <h1 className="text-white font-bold text-xl leading-tight">{current.title}</h1>
+          <p className="text-sky-100 text-xs mt-0.5">{current.subtitle}</p>
         </div>
 
         {/* ─── White Sheet Card ─── */}
