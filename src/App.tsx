@@ -90,8 +90,8 @@ function App() {
   const current = pageInfo[activeTab];
 
   return (
-    <div className="min-h-screen bg-sky-50 flex justify-center items-start py-0 sm:py-6">
-      <div className="w-full max-w-md min-h-screen sm:min-h-[850px] sm:max-h-[850px] bg-sky-50 flex flex-col relative sm:rounded-3xl sm:shadow-2xl sm:overflow-hidden">
+    <div className="h-[100dvh] sm:min-h-screen sm:h-auto bg-sky-50 flex justify-center items-start py-0 sm:py-6 overflow-hidden sm:overflow-auto">
+      <div className="w-full max-w-md h-full sm:h-auto sm:min-h-[850px] sm:max-h-[850px] bg-sky-50 flex flex-col relative sm:rounded-3xl sm:shadow-2xl sm:overflow-hidden">
 
         {/* ─── Blue Gradient Header ─── */}
         <div className="header-gradient px-5 pt-12 pb-16 relative overflow-hidden shrink-0">
