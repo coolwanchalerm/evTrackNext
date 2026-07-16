@@ -5,6 +5,14 @@ import { Stats } from './components/Stats';
 import { Record } from './components/Record';
 import { Settings } from './components/Settings';
 import { BarChart3, Zap, Settings as SettingsIcon } from 'lucide-react';
+import { ConfirmModal } from './components/ConfirmModal';
+
+export interface ConfirmDialogState {
+  isOpen: boolean;
+  title: string;
+  message: React.ReactNode;
+  onConfirm: () => void;
+}
 
 type TabType = 'stats' | 'record' | 'settings';
 
@@ -14,6 +22,20 @@ function App() {
   const [activeTab, setActiveTab] = useState<TabType>('stats');
   const [editingLog, setEditingLog] = useState<EvLog | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [confirmDialog, setConfirmDialog] = useState<ConfirmDialogState>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+  });
+
+  const showConfirm = (title: string, message: React.ReactNode, onConfirm: () => void) => {
+    setConfirmDialog({ isOpen: true, title, message, onConfirm });
+  };
+
+  const closeConfirm = () => {
+    setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+  };
 
   const loadData = async () => {
     setLoading(true);
@@ -68,15 +90,20 @@ function App() {
   };
 
   // ลบรายการเดี่ยว
-  const handleDeleteLog = async (id: number) => {
-    if (!window.confirm('ยืนยันการลบรายการนี้? ข้อมูลจะหายถาวร')) return;
-    setDeletingId(id);
-    try {
-      const ok = await deleteLog(id);
-      if (ok) setLogs(prev => prev.filter(l => l.id !== id));
-    } finally {
-      setDeletingId(null);
-    }
+  const handleDeleteLog = (id: number) => {
+    showConfirm(
+      'ลบรายการนี้?',
+      'ข้อมูลจะหายถาวรและไม่สามารถกู้คืนได้',
+      async () => {
+        setDeletingId(id);
+        try {
+          const ok = await deleteLog(id);
+          if (ok) setLogs(prev => prev.filter(l => l.id !== id));
+        } finally {
+          setDeletingId(null);
+        }
+      }
+    );
   };
 
   // หลัง Bulk Delete: reload จาก state ที่อัปเดตแล้ว
@@ -156,6 +183,7 @@ function App() {
                   logs={logs}
                   onBulkDeleteSuccess={handleBulkDeleteSuccess}
                   onConfigChange={loadData}
+                  showConfirm={showConfirm}
                 />
               )}
             </>
@@ -197,6 +225,8 @@ function App() {
 
           </div>
         </nav>
+
+        <ConfirmModal {...confirmDialog} onCancel={closeConfirm} />
       </div>
     </div>
   );

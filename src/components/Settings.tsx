@@ -12,9 +12,10 @@ interface SettingsProps {
   logs: EvLog[];
   onBulkDeleteSuccess: (newLogs: EvLog[]) => void;
   onConfigChange: () => void;
+  showConfirm: (title: string, message: React.ReactNode, onConfirm: () => void) => void;
 }
 
-export const Settings: React.FC<SettingsProps> = ({ logs, onBulkDeleteSuccess, onConfigChange }) => {
+export const Settings: React.FC<SettingsProps> = ({ logs, onBulkDeleteSuccess, onConfigChange, showConfirm }) => {
   const now = new Date();
 
   const [localMsg, setLocalMsg] = useState<string | null>(null);
@@ -34,39 +35,54 @@ export const Settings: React.FC<SettingsProps> = ({ logs, onBulkDeleteSuccess, o
 
   // Lifecycle effect removed since we don't display status here anymore.
 
-  const handleBulkDelete = async () => {
+  const handleBulkDelete = () => {
     const monthName = MONTH_FULL[delMonth - 1];
     const yearBE = delYear + 543;
-    if (!confirm(`ยืนยันลบข้อมูลทั้งหมดของเดือน${monthName} ปี ${yearBE}?\n\nข้อมูลจะหายถาวรและไม่สามารถกู้คืนได้`)) return;
-
-    setIsDeleting(true); setDeleteResult(null);
-    try {
-      const result = await deleteLogsByMonth(delYear, delMonth);
-      if (result.success) {
-        setDeleteResult({ ok: true, msg: `ลบข้อมูล ${result.count} รายการของเดือน${monthName} ปี ${yearBE} สำเร็จ` });
-        // Update parent's logs state
-        const { getLocalLogs } = await import('../lib/supabase');
-        onBulkDeleteSuccess(getLocalLogs());
-      } else {
-        setDeleteResult({ ok: false, msg: `เกิดข้อผิดพลาด: ${result.error}` });
+    
+    showConfirm(
+      'ลบข้อมูลรายเดือน?',
+      `ยืนยันลบข้อมูลทั้งหมดของเดือน${monthName} ปี ${yearBE}?\n\nข้อมูลจะหายถาวรและไม่สามารถกู้คืนได้`,
+      async () => {
+        setIsDeleting(true); setDeleteResult(null);
+        try {
+          const result = await deleteLogsByMonth(delYear, delMonth);
+          if (result.success) {
+            setDeleteResult({ ok: true, msg: `ลบข้อมูล ${result.count} รายการของเดือน${monthName} ปี ${yearBE} สำเร็จ` });
+            // Update parent's logs state
+            const { getLocalLogs } = await import('../lib/supabase');
+            onBulkDeleteSuccess(getLocalLogs());
+          } else {
+            setDeleteResult({ ok: false, msg: `เกิดข้อผิดพลาด: ${result.error}` });
+          }
+        } catch (e: any) {
+          setDeleteResult({ ok: false, msg: e.message });
+        } finally {
+          setIsDeleting(false);
+        }
       }
-    } catch (e: any) {
-      setDeleteResult({ ok: false, msg: e.message });
-    } finally {
-      setIsDeleting(false);
-    }
+    );
   };
 
   const handleResetSeed = () => {
-    if (!confirm('โหลดข้อมูลตั้งต้น 91 รายการ? (ข้อมูลที่เพิ่มจะหาย)')) return;
-    setLocalLogs(seedLogs); setLocalMsg('โหลดข้อมูลตั้งต้นสำเร็จ'); onConfigChange();
-    setTimeout(() => setLocalMsg(null), 3000);
+    showConfirm(
+      'โหลดข้อมูลตั้งต้น?',
+      'โหลดข้อมูลตั้งต้น 91 รายการ (ข้อมูลที่คุณเพิ่มจะหายไป)',
+      () => {
+        setLocalLogs(seedLogs); setLocalMsg('โหลดข้อมูลตั้งต้นสำเร็จ'); onConfigChange();
+        setTimeout(() => setLocalMsg(null), 3000);
+      }
+    );
   };
 
   const handleClearAll = () => {
-    if (!confirm('ลบข้อมูลทั้งหมดในเครื่อง? ไม่สามารถกู้คืนได้')) return;
-    setLocalLogs([]); setLocalMsg('ล้างข้อมูลเรียบร้อย'); onConfigChange();
-    setTimeout(() => setLocalMsg(null), 3000);
+    showConfirm(
+      'ล้างข้อมูลทั้งหมด?',
+      'ลบข้อมูลทั้งหมดในเครื่อง?\nข้อมูลจะหายถาวรและไม่สามารถกู้คืนได้',
+      () => {
+        setLocalLogs([]); setLocalMsg('ล้างข้อมูลเรียบร้อย'); onConfigChange();
+        setTimeout(() => setLocalMsg(null), 3000);
+      }
+    );
   };
 
   return (
