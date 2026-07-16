@@ -54,6 +54,14 @@ export const Record: React.FC<RecordProps> = ({
     setStatus(null);
   }, [editingLog]);
 
+  const clampSoc = (val: string) => {
+    if (val === '') return '';
+    const num = parseFloat(val);
+    if (num > 100) return '100';
+    if (num < 0) return '0';
+    return val;
+  };
+
   const { units, cost } = useMemo(() => {
     const s = parseFloat(startSoc) || 0;
     const e = parseFloat(endSoc) || 0;
@@ -85,7 +93,8 @@ export const Record: React.FC<RecordProps> = ({
         const s = parseFloat(startSoc);
         const en = parseFloat(endSoc);
         if (isNaN(s) || isNaN(en)) throw new Error('กรุณากรอกเปอร์เซ็นต์แบตเตอรี่');
-        if (en <= s) throw new Error('% สิ้นสุดต้องมากกว่า % เริ่มต้น');
+        if (s < 0 || s > 100 || en < 0 || en > 100) throw new Error('เปอร์เซ็นต์ต้องไม่เกิน 100');
+        if (s >= en) throw new Error('% เริ่มต้น ต้องน้อยกว่า % สิ้นสุด');
 
         const payload = { type: 'home' as const, date, start_soc: s, end_soc: en, units, cost, station_name: null };
 
@@ -217,7 +226,7 @@ export const Record: React.FC<RecordProps> = ({
                       min="0" max="100"
                       placeholder="0"
                       value={startSoc}
-                      onChange={e => setStartSoc(e.target.value)}
+                      onChange={e => setStartSoc(clampSoc(e.target.value))}
                       className="w-full p-3 border border-slate-200 rounded-xl text-center font-black text-2xl text-slate-800 bg-slate-50 focus:outline-none focus:border-sky-400 focus:bg-white transition-all"
                     />
                   </div>
@@ -228,7 +237,7 @@ export const Record: React.FC<RecordProps> = ({
                       min="0" max="100"
                       placeholder="100"
                       value={endSoc}
-                      onChange={e => setEndSoc(e.target.value)}
+                      onChange={e => setEndSoc(clampSoc(e.target.value))}
                       className="w-full p-3 border border-slate-200 rounded-xl text-center font-black text-2xl text-slate-800 bg-slate-50 focus:outline-none focus:border-sky-400 focus:bg-white transition-all"
                     />
                   </div>
