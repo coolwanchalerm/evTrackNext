@@ -182,7 +182,6 @@ function App() {
                 <Settings
                   logs={logs}
                   onBulkDeleteSuccess={handleBulkDeleteSuccess}
-                  onConfigChange={loadData}
                   showConfirm={showConfirm}
                 />
               )}
