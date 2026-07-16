@@ -13,6 +13,7 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabType>('stats');
   const [editingLog, setEditingLog] = useState<EvLog | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   const loadData = async () => {
     setLoading(true);
@@ -69,8 +70,13 @@ function App() {
   // ลบรายการเดี่ยว
   const handleDeleteLog = async (id: number) => {
     if (!window.confirm('ยืนยันการลบรายการนี้? ข้อมูลจะหายถาวร')) return;
-    const ok = await deleteLog(id);
-    if (ok) setLogs(prev => prev.filter(l => l.id !== id));
+    setDeletingId(id);
+    try {
+      const ok = await deleteLog(id);
+      if (ok) setLogs(prev => prev.filter(l => l.id !== id));
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   // หลัง Bulk Delete: reload จาก state ที่อัปเดตแล้ว
@@ -134,6 +140,7 @@ function App() {
                   logs={logs}
                   onEdit={handleEdit}
                   onDelete={handleDeleteLog}
+                  deletingId={deletingId}
                 />
               )}
               {activeTab === 'record' && (

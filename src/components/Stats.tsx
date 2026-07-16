@@ -10,13 +10,14 @@ interface StatsProps {
   logs: EvLog[];
   onEdit: (log: EvLog) => void;
   onDelete: (id: number) => void;
+  deletingId?: number | null;
 }
 
 const MONTH_FULL = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
 const MONTH_SHORT = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
 const YEAR_COLORS = ['#0EA5E9', '#1D4ED8', '#f59e0b', '#8b5cf6', '#ef4444'];
 
-export const Stats: React.FC<StatsProps> = ({ logs, onEdit, onDelete }) => {
+export const Stats: React.FC<StatsProps> = ({ logs, onEdit, onDelete, deletingId }) => {
   const now = new Date();
   const [filterType, setFilterType] = useState<'all' | 'home' | 'station'>('all');
   const [filterMonth, setFilterMonth] = useState<string>(String(now.getMonth() + 1).padStart(2, '0'));
@@ -347,10 +348,19 @@ export const Stats: React.FC<StatsProps> = ({ logs, onEdit, onDelete }) => {
                         </button>
                         <button
                           onClick={() => onDelete(log.id)}
-                          className="w-8 h-8 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 flex items-center justify-center transition-colors"
+                          disabled={deletingId === log.id}
+                          className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
+                            deletingId === log.id
+                              ? 'bg-slate-100 text-slate-400'
+                              : 'bg-red-50 text-red-500 hover:bg-red-100'
+                          }`}
                           title="ลบ"
                         >
-                          <Trash2 className="h-3.5 w-3.5" strokeWidth={1.5} />
+                          {deletingId === log.id ? (
+                            <div className="w-3.5 h-3.5 border-[2px] border-slate-300 border-t-slate-500 rounded-full animate-spin" />
+                          ) : (
+                            <Trash2 className="h-3.5 w-3.5" strokeWidth={1.5} />
+                          )}
                         </button>
                       </div>
                     </div>
