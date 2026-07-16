@@ -3,7 +3,7 @@ import { deleteLogsByMonth } from '../lib/supabase';
 import { type EvLog } from '../data/seedData';
 import {
   Check, AlertTriangle, RefreshCw,
-  Trash2, CalendarDays,
+  Trash2, CalendarDays, Database,
 } from 'lucide-react';
 
 const MONTH_FULL = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
@@ -60,10 +60,37 @@ export const Settings: React.FC<SettingsProps> = ({ logs, onBulkDeleteSuccess, s
     );
   };
 
-
+  const MAX_RECORDS = 5000;
+  const usedRecords = logs.length;
+  const percentUsed = Math.min((usedRecords / MAX_RECORDS) * 100, 100);
 
   return (
     <div className="px-4 pt-5 pb-4 space-y-4">
+
+      {/* ── STORAGE USAGE ── */}
+      <div className="bg-white rounded-2xl p-4 shadow-[0_2px_12px_rgba(0,0,0,0.05)] space-y-3 border border-slate-100">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Database className="h-4 w-4 text-sky-500" />
+            <span className="text-xs font-bold text-slate-600">พื้นที่จัดเก็บ (Supabase)</span>
+          </div>
+          <span className="text-[10px] font-bold text-slate-500 bg-slate-50 px-2 py-0.5 rounded-full border border-slate-100">
+            {usedRecords.toLocaleString()} / {MAX_RECORDS.toLocaleString()} รายการ
+          </span>
+        </div>
+        
+        <div>
+          <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden mb-1.5">
+            <div 
+              className={`h-full rounded-full transition-all duration-1000 ${percentUsed > 90 ? 'bg-red-500' : percentUsed > 75 ? 'bg-amber-500' : 'bg-sky-500'}`}
+              style={{ width: `${percentUsed}%` }}
+            />
+          </div>
+          <p className="text-[9px] text-slate-400 text-right">
+            *อิงจากจำนวนรายการ (แนะนำไม่เกิน 5,000 รายการเพื่อความรวดเร็ว)
+          </p>
+        </div>
+      </div>
 
       {/* ── BULK DELETE SECTION ── */}
       <div className="bg-white rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.05)] overflow-hidden">
