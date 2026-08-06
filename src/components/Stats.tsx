@@ -20,8 +20,25 @@ const YEAR_COLORS = ['#0EA5E9', '#1D4ED8', '#f59e0b', '#8b5cf6', '#ef4444'];
 export const Stats: React.FC<StatsProps> = ({ logs, onEdit, onDelete, deletingId }) => {
   const now = new Date();
   const [filterType, setFilterType] = useState<'all' | 'home' | 'station'>('all');
-  const [filterMonth, setFilterMonth] = useState<string>(String(now.getMonth() + 1).padStart(2, '0'));
+
+  // Determine initial month: if current month has records use it, otherwise default to 'all' (every month)
+  const defaultMonth = useMemo(() => {
+    const currentM = now.getMonth() + 1;
+    const currentY = now.getFullYear();
+    const hasCurrentMonthLogs = logs.some(l => {
+      const d = new Date(l.date);
+      return d.getFullYear() === currentY && d.getMonth() + 1 === currentM;
+    });
+    return hasCurrentMonthLogs ? String(currentM).padStart(2, '0') : 'all';
+  }, [logs]);
+
+  const [filterMonth, setFilterMonth] = useState<string>(defaultMonth);
   const [filterYear, setFilterYear] = useState<number>(now.getFullYear());
+
+  // Update filterMonth when defaultMonth is computed after initial load
+  React.useEffect(() => {
+    setFilterMonth(defaultMonth);
+  }, [defaultMonth]);
 
   // Available years from data
   const availableYears = useMemo(() => {

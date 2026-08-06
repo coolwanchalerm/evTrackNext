@@ -17,8 +17,8 @@ let currentConfig: SupabaseConfig | null = null;
 // Initialize config from localStorage or Environment Variables
 try {
   const savedConfig = localStorage.getItem(STORAGE_KEY_CONFIG);
-  let envUrl = import.meta.env.VITE_SUPABASE_URL;
-  let envKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+  let envUrl = import.meta.env.VITE_SUPABASE_URL || import.meta.env.NEXT_PUBLIC_SUPABASE_URL;
+  let envKey = import.meta.env.VITE_SUPABASE_ANON_KEY || import.meta.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || import.meta.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   
   if (savedConfig) {
     const config = JSON.parse(savedConfig) as SupabaseConfig;
@@ -107,13 +107,15 @@ export const fetchLogs = async (): Promise<EvLog[]> => {
         .order('date', { ascending: false })
         .order('id', { ascending: false });
       
-      if (!error && data) {
+      if (!error && data && data.length > 0) {
         // Sync local storage with what we got from Supabase
         const dbLogs = data as EvLog[];
         setLocalLogs(dbLogs);
         return dbLogs;
       }
-      console.warn('Supabase fetch failed, falling back to localStorage:', error);
+      if (error) {
+        console.warn('Supabase fetch failed, falling back to localStorage:', error);
+      }
     } catch (e) {
       console.warn('Supabase exception, falling back to localStorage:', e);
     }
