@@ -17,23 +17,24 @@ let currentConfig: SupabaseConfig | null = null;
 // Initialize config from localStorage or Environment Variables
 try {
   const savedConfig = localStorage.getItem(STORAGE_KEY_CONFIG);
-  let envUrl = import.meta.env.VITE_SUPABASE_URL || import.meta.env.NEXT_PUBLIC_SUPABASE_URL;
-  let envKey = import.meta.env.VITE_SUPABASE_ANON_KEY || import.meta.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || import.meta.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  
-  if (savedConfig) {
+  const envUrl = import.meta.env.VITE_SUPABASE_URL || import.meta.env.NEXT_PUBLIC_SUPABASE_URL;
+  const envKey = import.meta.env.VITE_SUPABASE_ANON_KEY || import.meta.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || import.meta.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (envUrl && envKey) {
+    // Env vars always take priority — overwrite any stale localStorage config
+    currentConfig = { url: envUrl, anonKey: envKey };
+    supabaseClient = createClient(envUrl, envKey);
+    localStorage.setItem(STORAGE_KEY_CONFIG, JSON.stringify(currentConfig));
+  } else if (savedConfig) {
+    // Fall back to manually-saved credentials (e.g. entered via Settings UI)
     const config = JSON.parse(savedConfig) as SupabaseConfig;
     if (config.url && config.anonKey) {
       currentConfig = config;
       supabaseClient = createClient(config.url, config.anonKey);
     }
-  } else if (envUrl && envKey) {
-    currentConfig = { url: envUrl, anonKey: envKey };
-    supabaseClient = createClient(envUrl, envKey);
-    // Also save to localStorage for consistent state in Settings tab
-    localStorage.setItem(STORAGE_KEY_CONFIG, JSON.stringify(currentConfig));
   }
 } catch (e) {
-  console.error('Failed to parse Supabase config from localStorage', e);
+  console.error('Failed to initialize Supabase config', e);
 }
 
 // Get the local storage logs, initialized with seed data if empty
