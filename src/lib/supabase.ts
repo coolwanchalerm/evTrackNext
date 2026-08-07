@@ -5,6 +5,10 @@ import { seedLogs, type EvLog } from '../data/seedData';
 const STORAGE_KEY_LOGS = 'ev_logs_local';
 const STORAGE_KEY_CONFIG = 'ev_tracker_supabase_config';
 
+// Default credentials (anon key is a public key — safe to include in client code)
+const DEFAULT_SUPABASE_URL = 'https://xliprucicnickwqoqtpa.supabase.co';
+const DEFAULT_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsaXBydWNpY25pY2t3cW9xdHBhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAyODk2MTMsImV4cCI6MjA4NTg2NTYxM30.ThDX7tleJf7Ty9XAn4dSXTC4p9slCizSUwffoWeU2HA';
+
 interface SupabaseConfig {
   url: string;
   anonKey: string;
@@ -14,16 +18,22 @@ interface SupabaseConfig {
 let supabaseClient: SupabaseClient | null = null;
 let currentConfig: SupabaseConfig | null = null;
 
-// Initialize config from localStorage or Environment Variables
+// Initialize config — priority order:
+// 1. Environment variables (VITE_ or NEXT_PUBLIC_)
+// 2. Manually saved credentials in localStorage (e.g. from Settings UI)
+// 3. Hardcoded defaults (always works on any device/browser)
 try {
   const savedConfig = localStorage.getItem(STORAGE_KEY_CONFIG);
   const envUrl = import.meta.env.VITE_SUPABASE_URL || import.meta.env.NEXT_PUBLIC_SUPABASE_URL;
   const envKey = import.meta.env.VITE_SUPABASE_ANON_KEY || import.meta.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || import.meta.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
+  const resolvedUrl = envUrl || DEFAULT_SUPABASE_URL;
+  const resolvedKey = envKey || DEFAULT_SUPABASE_ANON_KEY;
+
   if (envUrl && envKey) {
-    // Env vars always take priority — overwrite any stale localStorage config
-    currentConfig = { url: envUrl, anonKey: envKey };
-    supabaseClient = createClient(envUrl, envKey);
+    // Env vars take priority — overwrite any stale localStorage config
+    currentConfig = { url: resolvedUrl, anonKey: resolvedKey };
+    supabaseClient = createClient(resolvedUrl, resolvedKey);
     localStorage.setItem(STORAGE_KEY_CONFIG, JSON.stringify(currentConfig));
   } else if (savedConfig) {
     // Fall back to manually-saved credentials (e.g. entered via Settings UI)
@@ -32,6 +42,11 @@ try {
       currentConfig = config;
       supabaseClient = createClient(config.url, config.anonKey);
     }
+  } else {
+    // Use hardcoded defaults — works on any device without env vars
+    currentConfig = { url: resolvedUrl, anonKey: resolvedKey };
+    supabaseClient = createClient(resolvedUrl, resolvedKey);
+    localStorage.setItem(STORAGE_KEY_CONFIG, JSON.stringify(currentConfig));
   }
 } catch (e) {
   console.error('Failed to initialize Supabase config', e);
