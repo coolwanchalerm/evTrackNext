@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { fetchLogs, deleteLog } from './lib/supabase';
+import { fetchLogs, deleteLog, fetchElectricRate, getLocalElectricRate } from './lib/supabase';
 import type { EvLog } from './data/seedData';
 import { Stats } from './components/Stats';
 import { Record } from './components/Record';
@@ -18,6 +18,7 @@ type TabType = 'stats' | 'record' | 'settings';
 
 function App() {
   const [logs, setLogs] = useState<EvLog[]>([]);
+  const [electricRate, setElectricRate] = useState<number>(() => getLocalElectricRate());
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabType>('stats');
   const [editingLog, setEditingLog] = useState<EvLog | null>(null);
@@ -40,10 +41,11 @@ function App() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const data = await fetchLogs();
+      const [data, rate] = await Promise.all([fetchLogs(), fetchElectricRate()]);
       setLogs(data);
+      setElectricRate(rate);
     } catch (e) {
-      console.error('Failed to load logs', e);
+      console.error('Failed to load data', e);
     } finally {
       setLoading(false);
     }
@@ -176,6 +178,7 @@ function App() {
                   onSuccess={handleRecordSuccess}
                   onCancelEdit={handleCancelEdit}
                   historicalStations={historicalStations}
+                  electricRate={electricRate}
                 />
               )}
               {activeTab === 'settings' && (
@@ -183,6 +186,8 @@ function App() {
                   logs={logs}
                   onBulkDeleteSuccess={handleBulkDeleteSuccess}
                   showConfirm={showConfirm}
+                  electricRate={electricRate}
+                  onUpdateElectricRate={setElectricRate}
                 />
               )}
             </>

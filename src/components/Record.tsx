@@ -8,13 +8,13 @@ interface RecordProps {
   onSuccess: (log: EvLog, isEdit: boolean) => void;
   onCancelEdit: () => void;
   historicalStations: string[];
+  electricRate?: number;
 }
 
 const BATTERY_KWH = 60.48;
-const ELECTRIC_RATE = 4.2218;
 
 export const Record: React.FC<RecordProps> = ({
-  editingLog, onSuccess, onCancelEdit, historicalStations,
+  editingLog, onSuccess, onCancelEdit, historicalStations, electricRate = 4.2218,
 }) => {
   const [chargeType, setChargeType] = useState<'home' | 'station'>(editingLog?.type ?? 'home');
   const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
@@ -67,10 +67,10 @@ export const Record: React.FC<RecordProps> = ({
     const e = parseFloat(endSoc) || 0;
     if (e > s) {
       const u = (e - s) / 100 * BATTERY_KWH;
-      return { units: parseFloat(u.toFixed(4)), cost: parseFloat((u * ELECTRIC_RATE).toFixed(4)) };
+      return { units: parseFloat(u.toFixed(4)), cost: parseFloat((u * electricRate).toFixed(4)) };
     }
     return { units: 0, cost: 0 };
-  }, [startSoc, endSoc]);
+  }, [startSoc, endSoc, electricRate]);
 
   const suggestions = useMemo(() => {
     if (!stationName) return historicalStations.slice(0, 5);
@@ -253,7 +253,7 @@ export const Record: React.FC<RecordProps> = ({
                     <span className="text-slate-600 text-sm">ค่าไฟโดยประมาณ</span>
                     <span className="text-2xl font-black text-sky-500">{cost.toFixed(2)} ฿</span>
                   </div>
-                  <p className="text-[10px] text-slate-400 mt-2 text-right">*แบต 60.48 kWh | 4.2218 บ./หน่วย</p>
+                  <p className="text-[10px] text-slate-400 mt-2 text-right">*แบต 60.48 kWh | {electricRate} บ./หน่วย</p>
                 </div>
               </div>
             </div>

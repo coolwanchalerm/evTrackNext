@@ -4,6 +4,9 @@ import { seedLogs, type EvLog } from '../data/seedData';
 // Storage keys
 const STORAGE_KEY_LOGS = 'ev_logs_local';
 const STORAGE_KEY_CONFIG = 'ev_tracker_supabase_config';
+const STORAGE_KEY_ELECTRIC_RATE = 'ev_electric_rate';
+
+export const DEFAULT_ELECTRIC_RATE = 4.2218;
 
 // Default credentials (anon key is a public key — safe to include in client code)
 const DEFAULT_SUPABASE_URL = 'https://xliprucicnickwqoqtpa.supabase.co';
@@ -347,3 +350,81 @@ export const syncLocalToSupabase = async (): Promise<{ success: boolean; count: 
     return { success: false, count: 0, error: e.message || 'Unknown error' };
   }
 };
+
+// Get local electric rate (cached in localStorage)
+export const getLocalElectricRate = (): number => {
+  try {
+    const val = localStorage.getItem(STORAGE_KEY_ELECTRIC_RATE);
+    if (val !== null) {
+      const num = parseFloat(val);
+      if (!isNaN(num) && num > 0) return num;
+    }
+  } catch (e) {
+    console.error('Failed to read electric rate from localStorage', e);
+  }
+  return DEFAULT_ELECTRIC_RATE;
+};
+
+// Fetch electric rate from Supabase, fall back to local
+export const fetchElectricRate = async (): Promise<number> => {
+  if (supabaseClient) {
+    try {
+      const { data, error } = await supabaseClient
+        .from('ev_settings')
+        .select('value')
+        .eq('key', 'electric_rate')
+        .maybeSingle();
+
+      if (!error && data && data.value) {
+        const rate = parseFloat(data.value);
+        if (!isNaN(rate) && rate > 0) {
+          try {
+            localStorage.setItem(STORAGE_KEY_ELECTRIC_RATE, String(rate));
+          } catch {}
+          return rate;
+        }
+      }
+    } catch (e) {
+      console.warn('Supabase fetchElectricRate failed, using localStorage:', e);
+    }
+  }
+  return getLocalElectricRate();
+};
+
+// Save electric rate to localStorage and Supabase
+export const saveElectricRate = async (rate: number): Promise<{ success: boolean; error?: string }> => {
+  if (isNaN(rate) || rate <= 0) {
+    return { success: false, error: 'กรุณากรอกอัตราค่าไฟที่ถูกต้อง (มากกว่า 0)' };
+  }
+
+  // 1. Update localStorage cache immediately
+  try {
+    localStorage.setItem(STORAGE_KEY_ELECTRIC_RATE, String(rate));
+  } catch (e: any) {
+    console.error('Failed to save electric rate to localStorage', e);
+  }
+
+  // 2. Save to Supabase if connected
+  if (supabaseClient) {
+    try {
+      const { error } = await supabaseClient
+        .from('ev_settings')
+        .upsert(
+          { key: 'electric_rate', value: String(rate), updated_at: new Date().toISOString() },
+          { onConflict: 'key' }
+        );
+
+      if (error) {
+        console.warn('Failed to upsert electric_rate to Supabase (saved locally):', error);
+        // Even if the table doesn't exist in Supabase yet, we kept it locally
+        return { success: true };
+      }
+    } catch (e: any) {
+      console.warn('Exception upserting electric_rate to Supabase:', e);
+      return { success: true };
+    }
+  }
+
+  return { success: true };
+};
+
