@@ -4,7 +4,7 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend,
   PieChart, Pie, Cell,
 } from 'recharts';
-import { Home, MapPin, Trash2, Edit2, Zap, FolderOpen, TrendingUp, BarChart2, PieChartIcon } from 'lucide-react';
+import { Home, MapPin, Trash2, Edit2, Zap, FolderOpen, TrendingUp, BarChart2, PieChartIcon, Gauge } from 'lucide-react';
 
 interface StatsProps {
   logs: EvLog[];
@@ -62,6 +62,29 @@ export const Stats: React.FC<StatsProps> = ({ logs, onEdit, onDelete, deletingId
 
   const totalCost = filteredData.reduce((s, l) => s + l.cost, 0);
   const totalCount = filteredData.length;
+
+  // Distance and Savings calculations
+  const totalDistance = useMemo(() => {
+    return filteredData.reduce((sum, log) => {
+      const dist = log.distance != null && !isNaN(Number(log.distance)) ? Number(log.distance) : 0;
+      return sum + dist;
+    }, 0);
+  }, [filteredData]);
+
+  const { costWithDistance, recordedDistance } = useMemo(() => {
+    let costSum = 0;
+    let distSum = 0;
+    filteredData.forEach(log => {
+      const dist = log.distance != null && !isNaN(Number(log.distance)) ? Number(log.distance) : 0;
+      if (dist > 0) {
+        costSum += log.cost;
+        distSum += dist;
+      }
+    });
+    return { costWithDistance: costSum, recordedDistance: distSum };
+  }, [filteredData]);
+
+  const avgCostPerKm = recordedDistance > 0 ? (costWithDistance / recordedDistance) : null;
 
   // ── Chart 1: Stacked bar (monthly when 'all', daily for specific month) ──
   const chart1Data = useMemo(() => {
@@ -135,7 +158,7 @@ export const Stats: React.FC<StatsProps> = ({ logs, onEdit, onDelete, deletingId
 
   const chart1Title = filterMonth === 'all'
     ? `เปรียบเทียบรายเดือน (ปี ${filterYear + 543})`
-    : `รายจ่ายรายวัน (${MONTH_SHORT[parseInt(filterMonth) - 1]} ${filterYear + 543})`;
+    : `ค่าชาร์จรายวัน (${MONTH_SHORT[parseInt(filterMonth) - 1]} ${filterYear + 543})`;
 
   return (
     <div className="pb-4">
@@ -183,19 +206,58 @@ export const Stats: React.FC<StatsProps> = ({ logs, onEdit, onDelete, deletingId
       </div>
 
       {/* ── Summary Cards ── */}
-      <div className="px-4 mb-4 grid grid-cols-2 gap-3">
-        <div className="bg-gradient-to-br from-sky-500 to-indigo-700 p-4 rounded-2xl text-white shadow-md shadow-sky-100">
-          <p className="text-[10px] opacity-70 mb-2 font-medium tracking-wider uppercase">รวมค่าใช้จ่าย</p>
-          <p className="text-3xl font-bold leading-none">
-            {Math.round(totalCost).toLocaleString()}
-          </p>
-          <p className="text-sm opacity-60 mt-1.5">บาท</p>
+      <div className="px-4 mb-4 grid grid-cols-2 gap-2.5">
+        {/* Card 1: Total Cost */}
+        <div className="bg-gradient-to-br from-sky-500 to-indigo-700 p-3.5 rounded-2xl text-white shadow-md shadow-sky-100 flex flex-col justify-between">
+          <div>
+            <p className="text-[10px] opacity-75 font-medium tracking-wider uppercase">รวมค่าชาร์จ</p>
+            <p className="text-2xl font-bold leading-tight mt-1">
+              {Math.round(totalCost).toLocaleString()}
+            </p>
+          </div>
+          <p className="text-xs opacity-75 mt-2 pt-1.5 border-t border-white/10 text-right">บาท</p>
         </div>
-        <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
-          <p className="text-[10px] text-slate-400 mb-2 font-medium tracking-wider uppercase">จำนวนครั้ง</p>
-          <div className="flex items-end gap-1">
-            <p className="text-3xl font-bold text-slate-800 leading-none">{totalCount}</p>
-            <span className="text-sm text-slate-400 mb-0.5">ครั้ง</span>
+
+        {/* Card 2: Total Times */}
+        <div className="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm flex flex-col justify-between">
+          <div>
+            <p className="text-[10px] text-slate-400 font-medium tracking-wider uppercase">จำนวนครั้ง</p>
+            <div className="flex items-end gap-1 mt-1">
+              <p className="text-2xl font-bold text-slate-800 leading-tight">{totalCount}</p>
+            </div>
+          </div>
+          <p className="text-xs text-slate-400 mt-2 pt-1.5 border-t border-slate-50 text-right">ครั้ง</p>
+        </div>
+
+        {/* Card 3: Total Distance */}
+        <div className="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm flex flex-col justify-between">
+          <div>
+            <p className="text-[10px] text-slate-400 font-medium tracking-wider uppercase flex items-center gap-1">
+              <Gauge className="h-3 w-3 text-sky-500" /> ระยะทางรวม
+            </p>
+            <p className="text-2xl font-bold text-slate-800 leading-tight mt-1">
+              {totalDistance > 0 ? totalDistance.toLocaleString() : '-'}
+            </p>
+          </div>
+          <div className="flex items-center justify-between text-xs text-slate-400 mt-2 pt-1.5 border-t border-slate-50">
+            <span>{totalDistance > 0 ? 'จากการบันทึก' : 'ยังไม่มีเลขไมล์'}</span>
+            <span>กม.</span>
+          </div>
+        </div>
+
+        {/* Card 4: Avg Cost per km */}
+        <div className="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm flex flex-col justify-between">
+          <div>
+            <p className="text-[10px] text-slate-400 font-medium tracking-wider uppercase flex items-center gap-1">
+              <Zap className="h-3 w-3 text-amber-500" /> ต้นทุนเฉลี่ย
+            </p>
+            <p className="text-2xl font-bold text-slate-800 leading-tight mt-1">
+              {avgCostPerKm !== null ? avgCostPerKm.toFixed(2) : '-'}
+            </p>
+          </div>
+          <div className="flex items-center justify-between text-xs text-slate-400 mt-2 pt-1.5 border-t border-slate-50">
+            <span>ประสิทธิภาพ</span>
+            <span>บาท/กม.</span>
           </div>
         </div>
       </div>
@@ -234,7 +296,7 @@ export const Stats: React.FC<StatsProps> = ({ logs, onEdit, onDelete, deletingId
       <div className="mx-4 mb-4 bg-white rounded-2xl p-4 shadow-[0_2px_12px_rgba(0,0,0,0.05)] border border-slate-100">
         <h3 className="text-sm font-semibold text-slate-600 mb-3 flex items-center gap-2">
           <PieChartIcon className="h-4 w-4 text-sky-500 shrink-0" />
-          สัดส่วนค่าใช้จ่าย
+          สัดส่วนการชาร์จ
         </h3>
         {pieData.some(d => d.value > 0) ? (
           <div className="h-44">
@@ -347,6 +409,24 @@ export const Stats: React.FC<StatsProps> = ({ logs, onEdit, onDelete, deletingId
                         </div>
                       ) : (
                         <p className="text-[11px] font-medium text-slate-600 truncate">{log.station_name}</p>
+                      )}
+
+                      {/* Odometer & Distance badge */}
+                      {log.odometer != null && (
+                        <div className="flex items-center gap-1.5 text-[10px] text-slate-500 mt-1.5 flex-wrap">
+                          <span className="inline-flex items-center gap-1 text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded font-medium">
+                            <Gauge className="h-3 w-3 text-slate-400" />
+                            {Number(log.odometer).toLocaleString()} กม.
+                          </span>
+                          {log.distance != null && log.distance > 0 && (
+                            <span className="inline-flex items-center gap-1 text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded font-semibold border border-emerald-100/60">
+                              +{Number(log.distance).toLocaleString()} กม.
+                              <span className="text-emerald-600 font-normal">
+                                ({(log.cost / log.distance).toFixed(2)} ฿/กม.)
+                              </span>
+                            </span>
+                          )}
+                        </div>
                       )}
                     </div>
 

@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { createLog, updateLog } from '../lib/supabase';
 import type { EvLog } from '../data/seedData';
-import { Home, MapPin, Calendar, Check, AlertCircle, X } from 'lucide-react';
+import { Home, MapPin, Calendar, Check, AlertCircle, X, Gauge } from 'lucide-react';
 
 interface RecordProps {
   editingLog: EvLog | null;
@@ -9,12 +9,13 @@ interface RecordProps {
   onCancelEdit: () => void;
   historicalStations: string[];
   electricRate?: number;
+  logs?: EvLog[];
 }
 
 const BATTERY_KWH = 60.48;
 
 export const Record: React.FC<RecordProps> = ({
-  editingLog, onSuccess, onCancelEdit, historicalStations, electricRate = 4.2218,
+  editingLog, onSuccess, onCancelEdit, historicalStations, electricRate = 4.2218, logs = [],
 }) => {
   const [chargeType, setChargeType] = useState<'home' | 'station'>(editingLog?.type ?? 'home');
   const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
@@ -22,15 +23,25 @@ export const Record: React.FC<RecordProps> = ({
   const [endSoc, setEndSoc] = useState('');
   const [stationName, setStationName] = useState('');
   const [stationCost, setStationCost] = useState('');
+  const [odometer, setOdometer] = useState('');
   const [showAutocomplete, setShowAutocomplete] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [status, setStatus] = useState<{ ok: boolean; msg: string } | null>(null);
+
+  // Find previous odometer recorded in history
+  const previousOdometer = useMemo(() => {
+    const validLogs = logs
+      .filter(l => l.id !== editingLog?.id && l.odometer != null && !isNaN(Number(l.odometer)))
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime() || b.id - a.id);
+    return validLogs[0]?.odometer ?? null;
+  }, [logs, editingLog]);
 
   // Pre-fill form when editingLog changes
   useEffect(() => {
     if (editingLog) {
       setChargeType(editingLog.type);
       setDate(editingLog.date);
+      setOdometer(editingLog.odometer != null ? String(editingLog.odometer) : '');
       if (editingLog.type === 'home') {
         setStartSoc(String(editingLog.start_soc ?? ''));
         setEndSoc(String(editingLog.end_soc ?? ''));
@@ -50,6 +61,7 @@ export const Record: React.FC<RecordProps> = ({
       setEndSoc('');
       setStationName('');
       setStationCost('');
+      setOdometer('');
     }
     setStatus(null);
   }, [editingLog]);
@@ -72,6 +84,17 @@ export const Record: React.FC<RecordProps> = ({
     return { units: 0, cost: 0 };
   }, [startSoc, endSoc, electricRate]);
 
+  // Calculate distance for this trip
+  const calculatedDistance = useMemo(() => {
+    const cur = parseFloat(odometer);
+    if (!isNaN(cur) && previousOdometer != null && cur > previousOdometer) {
+      return cur - previousOdometer;
+    }
+    return editingLog?.distance ?? null;
+  }, [odometer, previousOdometer, editingLog]);
+
+  const currentTripCost = chargeType === 'home' ? cost : (parseFloat(stationCost) || 0);
+
   const suggestions = useMemo(() => {
     if (!stationName) return historicalStations.slice(0, 5);
     return historicalStations.filter(s => s.toLowerCase().includes(stationName.toLowerCase())).slice(0, 5);
@@ -88,6 +111,9 @@ export const Record: React.FC<RecordProps> = ({
     setIsSubmitting(true);
     setStatus(null);
 
+    const odoVal = odometer.trim() !== '' && !isNaN(parseFloat(odometer)) ? parseFloat(odometer) : null;
+    const distVal = calculatedDistance !== null && calculatedDistance > 0 ? calculatedDistance : null;
+
     try {
       if (chargeType === 'home') {
         const s = parseFloat(startSoc);
@@ -96,7 +122,17 @@ export const Record: React.FC<RecordProps> = ({
         if (s < 0 || s > 100 || en < 0 || en > 100) throw new Error('เปอร์เซ็นต์ต้องไม่เกิน 100');
         if (s >= en) throw new Error('% เริ่มต้น ต้องน้อยกว่า % สิ้นสุด');
 
-        const payload = { type: 'home' as const, date, start_soc: s, end_soc: en, units, cost, station_name: null };
+        const payload = {
+          type: 'home' as const,
+          date,
+          start_soc: s,
+          end_soc: en,
+          units,
+          cost,
+          station_name: null,
+          odometer: odoVal,
+          distance: distVal,
+        };
 
         if (editingLog) {
           const updated = await updateLog(editingLog.id, payload);
@@ -112,7 +148,17 @@ export const Record: React.FC<RecordProps> = ({
         const c = parseFloat(stationCost);
         if (isNaN(c) || c <= 0) throw new Error('กรุณาระบุค่าชาร์จที่จ่ายจริง');
 
-        const payload = { type: 'station' as const, date, start_soc: null, end_soc: null, units: null, cost: c, station_name: stationName.trim() };
+        const payload = {
+          type: 'station' as const,
+          date,
+          start_soc: null,
+          end_soc: null,
+          units: null,
+          cost: c,
+          station_name: stationName.trim(),
+          odometer: odoVal,
+          distance: distVal,
+        };
 
         if (editingLog) {
           const updated = await updateLog(editingLog.id, payload);
@@ -205,6 +251,55 @@ export const Record: React.FC<RecordProps> = ({
                 chargeType === 'home' ? 'focus:border-sky-400' : 'focus:border-sky-400'
               }`}
             />
+          </div>
+        </div>
+
+        {/* ── Odometer / Distance Card (Optional) ── */}
+        <div className="bg-white rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.05)] overflow-hidden">
+          <div className="px-4 py-2.5 border-b border-slate-50 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Gauge className="h-4 w-4 text-sky-500" />
+              <span className="text-xs font-semibold text-slate-700">เลขไมล์รถปัจจุบัน (กม.)</span>
+            </div>
+            <span className="text-[10px] text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full font-medium">ไม่บังคับ</span>
+          </div>
+          <div className="px-4 py-3 space-y-2.5">
+            <div className="relative">
+              <input
+                type="number"
+                step="1"
+                min="0"
+                placeholder={previousOdometer ? `เช่น ${previousOdometer + 300}` : 'เช่น 15200'}
+                value={odometer}
+                onChange={e => setOdometer(e.target.value)}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-bold text-slate-800 placeholder:text-slate-300 focus:outline-none focus:border-sky-400 focus:bg-white transition-all"
+              />
+              <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-400">กม.</span>
+            </div>
+
+            {/* Previous Odometer & Calculated Distance */}
+            {previousOdometer !== null && (
+              <div className="flex items-center justify-between text-[11px] text-slate-500 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-100">
+                <span>ไมล์ครั้งก่อน: <b className="text-slate-700">{previousOdometer.toLocaleString()} กม.</b></span>
+                {calculatedDistance !== null && calculatedDistance > 0 ? (
+                  <span className="text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded-lg">
+                    +{calculatedDistance.toLocaleString()} กม.
+                  </span>
+                ) : (
+                  <span className="text-slate-400">คำนวณอัตโนมัติเมื่อกรอก</span>
+                )}
+              </div>
+            )}
+
+            {/* Live Cost per km preview */}
+            {calculatedDistance !== null && calculatedDistance > 0 && currentTripCost > 0 && (
+              <div className="flex items-center justify-between text-xs font-medium text-emerald-700 bg-emerald-50/80 border border-emerald-100 px-3 py-2 rounded-xl">
+                <span>⚡ ต้นทุนวิ่งรอบนี้:</span>
+                <span className="font-bold text-emerald-600">
+                  ~{(currentTripCost / calculatedDistance).toFixed(2)} บาท/กม.
+                </span>
+              </div>
+            )}
           </div>
         </div>
 

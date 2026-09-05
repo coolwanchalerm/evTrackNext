@@ -166,23 +166,48 @@ export const createLog = async (logData: Omit<EvLog, 'id' | 'created_at'>): Prom
   // 2. Write to Supabase if connected
   if (supabaseClient) {
     try {
-      // Omit ID to let Supabase auto-increment or use the current one
-      const { data, error } = await supabaseClient
+      const fullPayload = {
+        type: logData.type,
+        date: logData.date,
+        start_soc: logData.start_soc,
+        end_soc: logData.end_soc,
+        units: logData.units,
+        cost: logData.cost,
+        station_name: logData.station_name,
+        odometer: logData.odometer ?? null,
+        distance: logData.distance ?? null,
+      };
+
+      // Attempt insert with odometer & distance
+      let { data, error } = await supabaseClient
         .from('ev_logs')
-        .insert([{
+        .insert([fullPayload])
+        .select();
+
+      // If schema error (e.g. column odometer doesn't exist on remote DB yet), retry with base fields
+      if (error && (error.code === 'PGRST204' || error.message?.includes('odometer') || error.message?.includes('distance') || error.message?.includes('schema cache'))) {
+        console.warn('Supabase ev_logs missing odometer/distance column, falling back to base columns:', error.message);
+        const basePayload = {
           type: logData.type,
           date: logData.date,
           start_soc: logData.start_soc,
           end_soc: logData.end_soc,
           units: logData.units,
           cost: logData.cost,
-          station_name: logData.station_name
-        }])
-        .select();
+          station_name: logData.station_name,
+        };
+        const fallbackRes = await supabaseClient.from('ev_logs').insert([basePayload]).select();
+        data = fallbackRes.data;
+        error = fallbackRes.error;
+      }
 
       if (!error && data && data.length > 0) {
-        // Update local log with the actual Supabase record (which has database ID and created_at)
-        const dbLog = data[0] as EvLog;
+        // Update local log with the actual Supabase record
+        const dbLog: EvLog = {
+          ...data[0],
+          odometer: logData.odometer ?? data[0].odometer ?? null,
+          distance: logData.distance ?? data[0].distance ?? null,
+        };
         const updatedLogs = getLocalLogs().map(l => l.id === newId ? dbLog : l);
         setLocalLogs(updatedLogs);
         return dbLog;
@@ -205,9 +230,28 @@ export const updateLog = async (id: number, logData: Omit<EvLog, 'id' | 'created
   // 2. Update in Supabase if connected
   if (supabaseClient) {
     try {
-      const { data, error } = await supabaseClient
+      const fullPayload = {
+        type: logData.type,
+        date: logData.date,
+        start_soc: logData.start_soc,
+        end_soc: logData.end_soc,
+        units: logData.units,
+        cost: logData.cost,
+        station_name: logData.station_name,
+        odometer: logData.odometer ?? null,
+        distance: logData.distance ?? null,
+      };
+
+      let { data, error } = await supabaseClient
         .from('ev_logs')
-        .update({
+        .update(fullPayload)
+        .eq('id', id)
+        .select();
+
+      // If schema error, fallback to base columns
+      if (error && (error.code === 'PGRST204' || error.message?.includes('odometer') || error.message?.includes('distance') || error.message?.includes('schema cache'))) {
+        console.warn('Supabase ev_logs missing odometer/distance column, falling back to base columns:', error.message);
+        const basePayload = {
           type: logData.type,
           date: logData.date,
           start_soc: logData.start_soc,
@@ -215,12 +259,23 @@ export const updateLog = async (id: number, logData: Omit<EvLog, 'id' | 'created
           units: logData.units,
           cost: logData.cost,
           station_name: logData.station_name,
-        })
-        .eq('id', id)
-        .select();
+        };
+        const fallbackRes = await supabaseClient
+          .from('ev_logs')
+          .update(basePayload)
+          .eq('id', id)
+          .select();
+        data = fallbackRes.data;
+        error = fallbackRes.error;
+      }
 
       if (!error && data && data.length > 0) {
-        return data[0] as EvLog;
+        const dbLog: EvLog = {
+          ...data[0],
+          odometer: logData.odometer ?? data[0].odometer ?? null,
+          distance: logData.distance ?? data[0].distance ?? null,
+        };
+        return dbLog;
       }
       console.warn('Failed to update in Supabase, kept locally:', error);
     } catch (e) {
@@ -427,4 +482,5 @@ export const saveElectricRate = async (rate: number): Promise<{ success: boolean
 
   return { success: true };
 };
+
 

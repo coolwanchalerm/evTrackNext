@@ -7,6 +7,8 @@ export interface EvLog {
   units: number | null;
   cost: number;
   station_name: string | null;
+  odometer?: number | null;
+  distance?: number | null;
   created_at: string;
 }
 

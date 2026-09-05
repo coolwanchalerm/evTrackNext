@@ -179,6 +179,7 @@ function App() {
                   onCancelEdit={handleCancelEdit}
                   historicalStations={historicalStations}
                   electricRate={electricRate}
+                  logs={logs}
                 />
               )}
               {activeTab === 'settings' && (

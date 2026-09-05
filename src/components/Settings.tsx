@@ -3,7 +3,7 @@ import { deleteLogsByMonth, saveElectricRate, getLocalLogs } from '../lib/supaba
 import { type EvLog } from '../data/seedData';
 import {
   Check, AlertTriangle, RefreshCw,
-  Trash2, CalendarDays, Database, Zap, Save, AlertCircle,
+  Trash2, CalendarDays, Database, Zap, Save, AlertCircle, Copy,
 } from 'lucide-react';
 
 const MONTH_FULL = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
@@ -32,6 +32,7 @@ export const Settings: React.FC<SettingsProps> = ({
   const [rateInput, setRateInput] = useState<string>(String(electricRate));
   const [isSavingRate, setIsSavingRate] = useState(false);
   const [rateStatus, setRateStatus] = useState<{ ok: boolean; msg: string } | null>(null);
+  const [copiedSql, setCopiedSql] = useState(false);
 
   useEffect(() => {
     setRateInput(String(electricRate));
@@ -65,6 +66,13 @@ export const Settings: React.FC<SettingsProps> = ({
     } finally {
       setIsSavingRate(false);
     }
+  };
+
+  const handleCopySql = () => {
+    const sql = `ALTER TABLE ev_logs ADD COLUMN IF NOT EXISTS odometer numeric;\nALTER TABLE ev_logs ADD COLUMN IF NOT EXISTS distance numeric;`;
+    navigator.clipboard?.writeText(sql);
+    setCopiedSql(true);
+    setTimeout(() => setCopiedSql(false), 3000);
   };
 
   // Bulk delete state
@@ -138,7 +146,7 @@ export const Settings: React.FC<SettingsProps> = ({
               : 'text-slate-500 hover:text-slate-700'
           }`}
         >
-          <Trash2 className="h-4 w-4" strokeWidth={1.5} /> ลบข้อมูลรายเดือน
+          <Trash2 className="h-4 w-4" strokeWidth={1.5} /> จัดการข้อมูล
         </button>
       </div>
 
@@ -231,6 +239,31 @@ export const Settings: React.FC<SettingsProps> = ({
               <p className="text-[9px] text-slate-400 text-right">
                 *อิงจากจำนวนรายการ (แนะนำไม่เกิน 5,000 รายการเพื่อความรวดเร็ว)
               </p>
+            </div>
+          </div>
+
+          {/* SUPABASE SQL TIP */}
+          <div className="bg-white rounded-2xl p-4 shadow-[0_2px_12px_rgba(0,0,0,0.05)] space-y-2.5 border border-slate-100">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Database className="h-4 w-4 text-sky-500" />
+                <span className="text-xs font-bold text-slate-700">อัปเกรดฐานข้อมูล Supabase (ทางเลือก)</span>
+              </div>
+              <button
+                type="button"
+                onClick={handleCopySql}
+                className="text-[11px] font-semibold text-sky-600 hover:text-sky-700 bg-sky-50 hover:bg-sky-100 px-2.5 py-1 rounded-lg flex items-center gap-1 transition-all"
+              >
+                {copiedSql ? <Check className="h-3 w-3 text-green-600" /> : <Copy className="h-3 w-3" />}
+                {copiedSql ? 'คัดลอกแล้ว!' : 'คัดลอกคำสั่ง SQL'}
+              </button>
+            </div>
+            <p className="text-[11px] text-slate-500 leading-relaxed">
+              หากต้องการให้ Supabase ซิงค์ข้อมูลเลขไมล์และระยะทางข้ามเครื่องได้ ให้คัดลอกคำสั่งนี้ไปรันใน <strong>Supabase SQL Editor</strong>:
+            </p>
+            <div className="bg-slate-900 text-sky-300 text-[11px] font-mono p-2.5 rounded-xl overflow-x-auto select-all">
+              ALTER TABLE ev_logs ADD COLUMN IF NOT EXISTS odometer numeric;<br />
+              ALTER TABLE ev_logs ADD COLUMN IF NOT EXISTS distance numeric;
             </div>
           </div>
 
