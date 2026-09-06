@@ -56,6 +56,7 @@ export const Record: React.FC<RecordProps> = ({
     } else {
       // Reset form when not editing
       const today = new Date().toISOString().split('T')[0];
+      setChargeType('home');
       setDate(today);
       setStartSoc('');
       setEndSoc('');

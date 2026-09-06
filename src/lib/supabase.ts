@@ -127,8 +127,18 @@ export const fetchLogs = async (): Promise<EvLog[]> => {
         .order('id', { ascending: false });
       
       if (!error && data && data.length > 0) {
-        // Sync local storage with what we got from Supabase
-        const dbLogs = data as EvLog[];
+        // Sync local storage with what we got from Supabase,
+        // but preserve odometer/distance from local if Supabase column doesn't exist yet
+        const localLogs = getLocalLogs();
+        const localMap = new Map(localLogs.map(l => [l.id, l]));
+        const dbLogs = (data as EvLog[]).map(dbRow => {
+          const local = localMap.get(dbRow.id);
+          return {
+            ...dbRow,
+            odometer: dbRow.odometer ?? local?.odometer ?? null,
+            distance: dbRow.distance ?? local?.distance ?? null,
+          };
+        });
         setLocalLogs(dbLogs);
         return dbLogs;
       }
@@ -381,6 +391,8 @@ export const syncLocalToSupabase = async (): Promise<{ success: boolean; count: 
       units: log.units,
       cost: log.cost,
       station_name: log.station_name,
+      odometer: log.odometer ?? null,
+      distance: log.distance ?? null,
       created_at: log.created_at
     }));
 
