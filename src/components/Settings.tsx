@@ -122,7 +122,7 @@ export const Settings: React.FC<SettingsProps> = ({
   const percentUsed = Math.min((usedRecords / MAX_RECORDS) * 100, 100);
 
   return (
-    <div className="px-4 pt-4 pb-4 space-y-4">
+    <div className="h-full overflow-y-auto overflow-x-hidden px-4 pt-4 pb-8 space-y-4">
 
       {/* ── Toggle Sub-tabs ── */}
       <div className="flex bg-slate-100 p-1 rounded-2xl gap-1">
