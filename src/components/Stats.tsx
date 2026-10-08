@@ -44,9 +44,13 @@ function computeAttributedCostPerKm(log: EvLog, allLogs: EvLog[]): number | null
   if (log.type === 'home' && log.start_soc != null && log.end_soc != null) {
     // ชาร์จบ้าน: ใช้ SOC ของตัวเอง (ไฟที่ชาร์จครั้งนี้ = ไฟที่ใช้วิ่งมาก่อนชาร์จ)
     socUsed = log.end_soc - log.start_soc;
-  } else if (log.type === 'station' && log.soc_before != null && prev.end_soc != null) {
-    // ชาร์จสถานี: วิ่งมาจาก end_soc_prev ลงมาถึง soc_before
-    socUsed = (prev.end_soc ?? 0) - log.soc_before;
+  } else if (log.type === 'station') {
+    // ชาร์จสถานี: เริ่มชาร์จที่ start_soc (หรือ soc_before ถ้าเป็นข้อมูลเก่า)
+    const socBeforeCharge = log.start_soc ?? log.soc_before;
+    if (socBeforeCharge != null && prev.end_soc != null) {
+      // วิ่งมาจาก end_soc_prev ลงมาถึง socBeforeCharge
+      socUsed = prev.end_soc - socBeforeCharge;
+    }
   }
 
   if (socUsed == null || socUsed <= 0) return null;
@@ -440,16 +444,28 @@ export const Stats: React.FC<StatsProps> = ({ logs, onEdit, onDelete, deletingId
                         {isHome ? 'ชาร์จบ้าน' : 'สถานีชาร์จ'}
                       </span>
                     </div>
-                      {isHome ? (
+                      {/* Details row: SOC for home or station */}
+                      {log.start_soc != null || log.end_soc != null ? (
                         <div className="flex items-center gap-1 flex-wrap">
-                          <span className="text-[10px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-600">Start {log.start_soc}%</span>
-                          <span className="text-[10px] text-slate-400">→</span>
-                          <span className="text-[10px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-600">End {log.end_soc}%</span>
-                          <span className="text-[10px] text-sky-500 font-semibold ml-1">{Number(log.units).toFixed(1)} kWh</span>
+                          {!isHome && log.station_name && (
+                            <span className="text-[11px] font-medium text-slate-700 mr-1">{log.station_name} •</span>
+                          )}
+                          {log.start_soc != null && (
+                            <span className="text-[10px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-600">Start {log.start_soc}%</span>
+                          )}
+                          {log.start_soc != null && log.end_soc != null && (
+                            <span className="text-[10px] text-slate-400">→</span>
+                          )}
+                          {log.end_soc != null && (
+                            <span className="text-[10px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-600">End {log.end_soc}%</span>
+                          )}
+                          {log.units != null && Number(log.units) > 0 && (
+                            <span className="text-[10px] text-sky-500 font-semibold ml-1">{Number(log.units).toFixed(1)} kWh</span>
+                          )}
                         </div>
-                      ) : (
+                      ) : !isHome ? (
                         <p className="text-[11px] font-medium text-slate-600 truncate">{log.station_name}</p>
-                      )}
+                      ) : null}
 
                       {/* Odometer & Distance badge */}
                       {log.odometer != null && (
@@ -475,8 +491,8 @@ export const Stats: React.FC<StatsProps> = ({ logs, onEdit, onDelete, deletingId
                               </span>
                             );
                           })()}
-                          {/* Show soc_before on station logs */}
-                          {!isHome && log.soc_before != null && (
+                          {/* Show soc_before on legacy station logs if no start_soc */}
+                          {!isHome && log.start_soc == null && log.soc_before != null && (
                             <span className="inline-flex items-center gap-1 text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded font-medium">
                               แบตก่อนชาร์จ {log.soc_before}%
                             </span>

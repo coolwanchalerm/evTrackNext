@@ -23,7 +23,6 @@ export const Record: React.FC<RecordProps> = ({
   const [endSoc, setEndSoc] = useState('');
   const [stationName, setStationName] = useState('');
   const [stationCost, setStationCost] = useState('');
-  const [socBefore, setSocBefore] = useState(''); // % แบตก่อนชาร์จสถานี
   const [odometer, setOdometer] = useState('');
   const [showAutocomplete, setShowAutocomplete] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -43,18 +42,14 @@ export const Record: React.FC<RecordProps> = ({
       setChargeType(editingLog.type);
       setDate(editingLog.date);
       setOdometer(editingLog.odometer != null ? String(editingLog.odometer) : '');
+      setStartSoc(editingLog.start_soc != null ? String(editingLog.start_soc) : (editingLog.soc_before != null ? String(editingLog.soc_before) : ''));
+      setEndSoc(editingLog.end_soc != null ? String(editingLog.end_soc) : '');
       if (editingLog.type === 'home') {
-        setStartSoc(String(editingLog.start_soc ?? ''));
-        setEndSoc(String(editingLog.end_soc ?? ''));
         setStationName('');
         setStationCost('');
-        setSocBefore('');
       } else {
         setStationName(editingLog.station_name ?? '');
         setStationCost(String(editingLog.cost));
-        setSocBefore(editingLog.soc_before != null ? String(editingLog.soc_before) : '');
-        setStartSoc('');
-        setEndSoc('');
       }
     } else {
       // Reset form when not editing
@@ -65,7 +60,6 @@ export const Record: React.FC<RecordProps> = ({
       setEndSoc('');
       setStationName('');
       setStationCost('');
-      setSocBefore('');
       setOdometer('');
     }
     setStatus(null);
@@ -119,8 +113,6 @@ export const Record: React.FC<RecordProps> = ({
     const odoVal = odometer.trim() !== '' && !isNaN(parseFloat(odometer)) ? parseFloat(odometer) : null;
     const distVal = calculatedDistance !== null && calculatedDistance > 0 ? calculatedDistance : null;
 
-    const socBeforeVal = socBefore.trim() !== '' && !isNaN(parseFloat(socBefore)) ? parseFloat(socBefore) : null;
-
     try {
       if (chargeType === 'home') {
         const s = parseFloat(startSoc);
@@ -156,17 +148,29 @@ export const Record: React.FC<RecordProps> = ({
         const c = parseFloat(stationCost);
         if (isNaN(c) || c <= 0) throw new Error('กรุณาระบุค่าชาร์จที่จ่ายจริง');
 
+        const s = startSoc.trim() !== '' && !isNaN(parseFloat(startSoc)) ? parseFloat(startSoc) : null;
+        const en = endSoc.trim() !== '' && !isNaN(parseFloat(endSoc)) ? parseFloat(endSoc) : null;
+
+        if (s !== null && (s < 0 || s > 100)) throw new Error('เปอร์เซ็นต์เริ่มต้นต้องอยู่ระหว่าง 0 - 100');
+        if (en !== null && (en < 0 || en > 100)) throw new Error('เปอร์เซ็นต์สิ้นสุดต้องอยู่ระหว่าง 0 - 100');
+        if (s !== null && en !== null && s >= en) throw new Error('% เริ่มต้น ต้องน้อยกว่า % สิ้นสุด');
+
+        // ถ้ากรอก start_soc & end_soc สามารถคำนวณ units ได้
+        const stationUnits = (s !== null && en !== null && en > s)
+          ? parseFloat(((en - s) / 100 * BATTERY_KWH).toFixed(4))
+          : null;
+
         const payload = {
           type: 'station' as const,
           date,
-          start_soc: null,
-          end_soc: null,
-          units: null,
+          start_soc: s,
+          end_soc: en,
+          units: stationUnits,
           cost: c,
           station_name: stationName.trim(),
           odometer: odoVal,
           distance: distVal,
-          soc_before: socBeforeVal,
+          soc_before: s, // start_soc คือ soc_before ของการชาร์จสถานี
         };
 
         if (editingLog) {
@@ -429,26 +433,46 @@ export const Record: React.FC<RecordProps> = ({
                   />
                 </div>
 
-                {/* SOC Before — optional, for accurate cost/km */}
-                <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label className="text-xs font-semibold text-slate-500">% แบตก่อนชาร์จ</label>
-                    <span className="text-[10px] text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full font-medium">ไม่บังคับ</span>
+                {/* SOC Inputs (เริ่มต้น - สิ้นสุด) */}
+                <div className="bg-slate-50/80 p-3.5 rounded-xl border border-slate-200/80 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-slate-600">ระดับแบตเตอรี่ (%)</span>
+                    <span className="text-[10px] text-slate-400 bg-white px-2 py-0.5 rounded-full font-medium border border-slate-100">ไม่บังคับ</span>
                   </div>
-                  <div className="relative">
-                    <input
-                      type="number"
-                      min="0"
-                      max="100"
-                      step="1"
-                      placeholder="เช่น 30"
-                      value={socBefore}
-                      onChange={e => setSocBefore(clampSoc(e.target.value))}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-bold text-slate-800 placeholder:text-slate-300 focus:outline-none focus:border-sky-400 focus:bg-white transition-all"
-                    />
-                    <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-400">%</span>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-500 mb-1">เริ่มต้น (%)</label>
+                      <input
+                        type="number"
+                        min="0" max="100"
+                        placeholder="เช่น 30"
+                        value={startSoc}
+                        onChange={e => setStartSoc(clampSoc(e.target.value))}
+                        className="w-full p-2.5 border border-slate-200 rounded-xl text-center font-black text-xl text-slate-800 bg-white focus:outline-none focus:border-sky-400 transition-all"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-500 mb-1">สิ้นสุด (%)</label>
+                      <input
+                        type="number"
+                        min="0" max="100"
+                        placeholder="เช่น 80"
+                        value={endSoc}
+                        onChange={e => setEndSoc(clampSoc(e.target.value))}
+                        className="w-full p-2.5 border border-slate-200 rounded-xl text-center font-black text-xl text-slate-800 bg-white focus:outline-none focus:border-sky-400 transition-all"
+                      />
+                    </div>
                   </div>
-                  <p className="text-[10px] text-slate-400 mt-1">กรอกเพื่อคำนวณ บาท/กม. ที่แม่นยำขึ้น</p>
+                  {/* Summary of energy charged if both are filled */}
+                  {parseFloat(endSoc) > parseFloat(startSoc) && (
+                    <div className="flex justify-between items-center text-xs bg-sky-50/80 px-3 py-1.5 rounded-lg border border-sky-100 text-sky-800 font-medium">
+                      <span>ประจุไฟเพิ่ม:</span>
+                      <span className="font-bold">
+                        +{parseFloat(endSoc) - parseFloat(startSoc)}% (~{(((parseFloat(endSoc) - parseFloat(startSoc)) / 100) * BATTERY_KWH).toFixed(2)} kWh)
+                      </span>
+                    </div>
+                  )}
+                  <p className="text-[10px] text-slate-400">กรอกเพื่อคำนวณอัตราสิ้นเปลืองและหน่วยไฟที่ชาร์จเข้า</p>
                 </div>
               </div>
             </div>
