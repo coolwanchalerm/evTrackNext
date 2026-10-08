@@ -125,15 +125,15 @@ function App() {
   const current = pageInfo[activeTab];
 
   return (
-    <div className="h-[100dvh] w-full bg-sky-50 flex justify-center items-stretch sm:items-center py-0 sm:py-6 overflow-hidden select-none">
-      <div className="w-full max-w-md h-full sm:h-[850px] bg-sky-50 flex flex-col relative sm:rounded-3xl sm:shadow-2xl overflow-hidden">
+    <div className="h-[100dvh] sm:min-h-screen sm:h-auto bg-sky-50 flex justify-center items-start py-0 sm:py-6 overflow-hidden sm:overflow-auto">
+      <div className="w-full max-w-md h-full sm:h-auto sm:min-h-[850px] sm:max-h-[850px] bg-sky-50 flex flex-col relative sm:rounded-3xl sm:shadow-2xl sm:overflow-hidden">
 
-        {/* ─── Blue Gradient Header (Pinned) ─── */}
-        <div className="header-gradient px-5 pt-7 pb-8 relative overflow-hidden shrink-0 z-20 shadow-sm">
-          <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-white/10 pointer-events-none" />
-          <div className="absolute top-6 -right-6 w-24 h-24 rounded-full bg-white/08 pointer-events-none" />
+        {/* ─── Blue Gradient Header ─── */}
+        <div className="header-gradient px-5 pt-8 pb-10 relative overflow-hidden shrink-0">
+          <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-white/10" />
+          <div className="absolute top-6 -right-6 w-24 h-24 rounded-full bg-white/08" />
 
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center justify-between mb-3">
             {/* Logo */}
             <div className="flex items-center gap-2">
               <div className="w-7 h-7 bg-white/20 rounded-xl flex items-center justify-center">
@@ -151,14 +151,14 @@ function App() {
             </div>
           </div>
 
-          <h1 className="text-white font-bold text-lg leading-tight">{current.title}</h1>
+          <h1 className="text-white font-bold text-xl leading-tight">{current.title}</h1>
           <p className="text-sky-100 text-xs mt-0.5">{current.subtitle}</p>
         </div>
 
-        {/* ─── White Sheet Card (Content Area) ─── */}
-        <div className="sheet-card flex-1 min-h-0 overflow-hidden flex flex-col -mt-4 relative z-10 pb-[74px]">
+        {/* ─── White Sheet Card ─── */}
+        <div className="sheet-card flex-1 overflow-y-auto -mt-6 pb-28 relative z-10">
           {loading ? (
-            <div className="flex-1 flex flex-col items-center justify-center gap-3">
+            <div className="flex flex-col items-center justify-center py-40 gap-3">
               <div className="w-10 h-10 border-[3px] border-sky-500 border-t-transparent rounded-full animate-spin" />
               <span className="text-sm text-slate-400">กำลังโหลดข้อมูล...</span>
             </div>

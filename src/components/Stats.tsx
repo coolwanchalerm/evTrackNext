@@ -64,7 +64,6 @@ function computeAttributedCostPerKm(log: EvLog, allLogs: EvLog[]): number | null
 export const Stats: React.FC<StatsProps> = ({ logs, onEdit, onDelete, deletingId }) => {
   const now = new Date();
   const [filterType, setFilterType] = useState<'all' | 'home' | 'station'>('all');
-  const [viewMode, setViewMode] = useState<'list' | 'charts'>('list');
 
   // Determine initial month: if current month has records use it, otherwise default to 'all' (every month)
   const defaultMonth = useMemo(() => {
@@ -206,21 +205,21 @@ export const Stats: React.FC<StatsProps> = ({ logs, onEdit, onDelete, deletingId
     : `ค่าชาร์จรายวัน (${MONTH_SHORT[parseInt(filterMonth) - 1]} ${filterYear + 543})`;
 
   return (
-    <div className="h-full flex flex-col overflow-hidden">
+    <div className="pb-4">
 
-      {/* ── Pinned Top Section (Filter & Summary Cards) ── */}
-      <div className="shrink-0 px-4 pt-3.5 pb-2 border-b border-slate-100 bg-white/50 backdrop-blur-xs space-y-2.5">
+      {/* ── Filter Section ── */}
+      <div className="px-4 pt-5 mb-4 space-y-3">
         {/* Type Pills */}
-        <div className="flex gap-1.5">
+        <div className="flex gap-2">
           {(['all', 'home', 'station'] as const).map(t => (
             <button key={t} onClick={() => setFilterType(t)}
-              className={`flex-1 py-1.5 rounded-xl text-xs font-semibold border transition-all flex items-center justify-center gap-1.5 ${
+              className={`flex-1 py-2 rounded-xl text-xs font-semibold border transition-all flex items-center justify-center gap-1.5 ${
                 filterType === t ? 'bg-sky-500 text-white border-sky-500 shadow-sm' : 'bg-white text-slate-500 border-slate-200'
               }`}
             >
-              {t === 'all' && <Zap className="h-3 w-3" />}
-              {t === 'home' && <Home className="h-3 w-3" />}
-              {t === 'station' && <MapPin className="h-3 w-3" />}
+              {t === 'all' && <Zap className="h-3.5 w-3.5" />}
+              {t === 'home' && <Home className="h-3.5 w-3.5" />}
+              {t === 'station' && <MapPin className="h-3.5 w-3.5" />}
               {t === 'all' ? 'ทั้งหมด' : t === 'home' ? 'บ้าน' : 'สถานี'}
             </button>
           ))}
@@ -231,7 +230,7 @@ export const Stats: React.FC<StatsProps> = ({ logs, onEdit, onDelete, deletingId
           <select
             value={filterMonth}
             onChange={e => setFilterMonth(e.target.value)}
-            className="bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-700 focus:outline-none focus:border-sky-400 shadow-xs"
+            className="bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-semibold text-slate-700 focus:outline-none focus:border-sky-400 shadow-sm"
           >
             <option value="all">ทุกเดือน (รายปี)</option>
             {MONTH_FULL.map((m, i) => (
@@ -241,320 +240,304 @@ export const Stats: React.FC<StatsProps> = ({ logs, onEdit, onDelete, deletingId
           <select
             value={filterYear}
             onChange={e => setFilterYear(parseInt(e.target.value))}
-            className="bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-700 focus:outline-none focus:border-sky-400 shadow-xs"
+            className="bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-semibold text-slate-700 focus:outline-none focus:border-sky-400 shadow-sm"
           >
             {availableYears.map(y => (
               <option key={y} value={y}>ปี {y + 543}</option>
             ))}
           </select>
         </div>
+      </div>
 
-        {/* Summary Cards (Compact 4-grid) */}
-        <div className="grid grid-cols-4 gap-1.5">
-          {/* Card 1: Total Cost */}
-          <div className="bg-gradient-to-br from-sky-500 to-indigo-600 p-2 rounded-xl text-white shadow-xs flex flex-col justify-between">
-            <p className="text-[9px] opacity-80 font-medium leading-none">รวมค่าชาร์จ</p>
-            <p className="text-sm font-bold leading-tight mt-1 truncate">
+      {/* ── Summary Cards ── */}
+      <div className="px-4 mb-4 grid grid-cols-2 gap-2.5">
+        {/* Card 1: Total Cost */}
+        <div className="bg-gradient-to-br from-sky-500 to-indigo-700 p-3.5 rounded-2xl text-white shadow-md shadow-sky-100 flex flex-col justify-between">
+          <div>
+            <p className="text-[10px] opacity-75 font-medium tracking-wider uppercase">รวมค่าชาร์จ</p>
+            <p className="text-2xl font-bold leading-tight mt-1">
               {Math.round(totalCost).toLocaleString()}
             </p>
-            <p className="text-[9px] opacity-75 text-right leading-none">บาท</p>
           </div>
+          <p className="text-xs opacity-75 mt-2 pt-1.5 border-t border-white/10 text-right">บาท</p>
+        </div>
 
-          {/* Card 2: Total Times */}
-          <div className="bg-white p-2 rounded-xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
-            <p className="text-[9px] text-slate-400 font-medium leading-none">จำนวนครั้ง</p>
-            <p className="text-sm font-bold text-slate-800 leading-tight mt-1 truncate">{totalCount}</p>
-            <p className="text-[9px] text-slate-400 text-right leading-none">ครั้ง</p>
+        {/* Card 2: Total Times */}
+        <div className="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm flex flex-col justify-between">
+          <div>
+            <p className="text-[10px] text-slate-400 font-medium tracking-wider uppercase">จำนวนครั้ง</p>
+            <div className="flex items-end gap-1 mt-1">
+              <p className="text-2xl font-bold text-slate-800 leading-tight">{totalCount}</p>
+            </div>
           </div>
+          <p className="text-xs text-slate-400 mt-2 pt-1.5 border-t border-slate-50 text-right">ครั้ง</p>
+        </div>
 
-          {/* Card 3: Total Distance */}
-          <div className="bg-white p-2 rounded-xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
-            <p className="text-[9px] text-slate-400 font-medium leading-none flex items-center gap-0.5">
-              <Gauge className="h-2.5 w-2.5 text-sky-500" /> ระยะทาง
+        {/* Card 3: Total Distance */}
+        <div className="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm flex flex-col justify-between">
+          <div>
+            <p className="text-[10px] text-slate-400 font-medium tracking-wider uppercase flex items-center gap-1">
+              <Gauge className="h-3 w-3 text-sky-500" /> ระยะทางรวม
             </p>
-            <p className="text-sm font-bold text-slate-800 leading-tight mt-1 truncate">
+            <p className="text-2xl font-bold text-slate-800 leading-tight mt-1">
               {totalDistance > 0 ? totalDistance.toLocaleString() : '-'}
             </p>
-            <p className="text-[9px] text-slate-400 text-right leading-none">กม.</p>
           </div>
-
-          {/* Card 4: Avg Cost per km */}
-          <div className="bg-white p-2 rounded-xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
-            <p className="text-[9px] text-slate-400 font-medium leading-none flex items-center gap-0.5">
-              <Zap className="h-2.5 w-2.5 text-amber-500" /> เฉลี่ย
-            </p>
-            <p className="text-sm font-bold text-slate-800 leading-tight mt-1 truncate">
-              {avgCostPerKm !== null ? avgCostPerKm.toFixed(2) : '-'}
-            </p>
-            <p className="text-[9px] text-slate-400 text-right leading-none">฿/กม.</p>
+          <div className="flex items-center justify-between text-xs text-slate-400 mt-2 pt-1.5 border-t border-slate-50">
+            <span>{totalDistance > 0 ? 'จากการบันทึก' : 'ยังไม่มีเลขไมล์'}</span>
+            <span>กม.</span>
           </div>
         </div>
 
-        {/* Sub-tab Switcher: [📋 รายการล่าสุด] vs [📊 กราฟสถิติ] */}
-        <div className="flex bg-slate-100 p-0.5 rounded-xl gap-1">
-          <button
-            type="button"
-            onClick={() => setViewMode('list')}
-            className={`flex-1 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
-              viewMode === 'list'
-                ? 'bg-white shadow-xs text-sky-600'
-                : 'text-slate-500 hover:text-slate-700'
-            }`}
-          >
-            <FolderOpen className="h-3.5 w-3.5" /> รายการล่าสุด ({filteredData.length})
-          </button>
-          <button
-            type="button"
-            onClick={() => setViewMode('charts')}
-            className={`flex-1 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
-              viewMode === 'charts'
-                ? 'bg-white shadow-xs text-sky-600'
-                : 'text-slate-500 hover:text-slate-700'
-            }`}
-          >
-            <TrendingUp className="h-3.5 w-3.5" /> กราฟสถิติ
-          </button>
+        {/* Card 4: Avg Cost per km */}
+        <div className="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm flex flex-col justify-between">
+          <div>
+            <p className="text-[10px] text-slate-400 font-medium tracking-wider uppercase flex items-center gap-1">
+              <Zap className="h-3 w-3 text-amber-500" /> ต้นทุนเฉลี่ย
+            </p>
+            <p className="text-2xl font-bold text-slate-800 leading-tight mt-1">
+              {avgCostPerKm !== null ? avgCostPerKm.toFixed(2) : '-'}
+            </p>
+          </div>
+          <div className="flex items-center justify-between text-xs text-slate-400 mt-2 pt-1.5 border-t border-slate-50">
+            <span>ประสิทธิภาพ</span>
+            <span>บาท/กม.</span>
+          </div>
         </div>
       </div>
 
-      {/* ── Scrollable Body Area (ONLY this part scrolls vertically) ── */}
-      <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-4 py-3">
+      {/* ── Chart 1: Stacked Bar ── */}
+      <div className="mx-4 mb-4 bg-white rounded-2xl p-4 shadow-[0_2px_12px_rgba(0,0,0,0.05)] border border-slate-100">
+        <h3 className="text-sm font-semibold text-slate-600 mb-3 flex items-center gap-2">
+          <TrendingUp className="h-4 w-4 text-sky-500 shrink-0" />
+          {chart1Title}
+        </h3>
+        <div className="h-48">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={chart1Data} margin={{ top: 5, right: 5, left: -28, bottom: 5 }}>
+              <XAxis
+                dataKey="name"
+                stroke="#94a3b8"
+                fontSize={filterMonth === 'all' ? 9 : 8}
+                tickLine={false}
+                axisLine={false}
+                interval={filterMonth === 'all' ? 0 : 4}
+              />
+              <YAxis stroke="#94a3b8" fontSize={9} tickLine={false} axisLine={false} />
+              <Tooltip
+                contentStyle={{ fontSize: '11px', borderRadius: '10px', border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.12)' }}
+                cursor={{ fill: '#f0fdf4' }}
+              />
+              <Legend wrapperStyle={{ fontSize: '10px', paddingTop: '6px' }} />
+              <Bar dataKey="บ้าน" stackId="a" fill="#1D4ED8" maxBarSize={18} />
+              <Bar dataKey="สถานี" stackId="a" fill="#3b82f6" radius={[3, 3, 0, 0]} maxBarSize={18} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
 
-        {/* ── VIEW 1: รายการล่าสุด (List Mode) ── */}
-        {viewMode === 'list' && (
-          <div>
-            {filteredData.length === 0 ? (
-              <div className="flex flex-col items-center justify-center p-8 bg-white rounded-2xl border border-dashed border-slate-200 text-slate-400">
-                <FolderOpen className="h-10 w-10 mb-2 text-slate-300" />
-                <p className="text-sm">ไม่มีข้อมูลในช่วงเวลานี้</p>
-              </div>
-            ) : (
-              <div className="space-y-2.5 pb-6">
-                {filteredData.map(log => {
-                  const isHome = log.type === 'home';
-                  return (
-                    <div
-                      key={log.id}
-                      className={`bg-white rounded-xl shadow-xs p-3 relative border-l-4 ${isHome ? 'border-l-sky-500' : 'border-l-sky-500'} border border-slate-100`}
-                    >
-                      <div className="flex items-center gap-2.5">
-                        {/* Date Box */}
-                        <div className="flex flex-col items-center justify-center bg-slate-50 rounded-xl py-1.5 px-2 min-w-[2.8rem] border border-slate-100 shrink-0">
-                          <span className="text-lg font-black text-slate-700 leading-none">{fmtDay(log.date)}</span>
-                          <span className="text-[10px] text-slate-500 mt-0.5">{fmtMonthS(log.date)}</span>
-                          <span className="text-[9px] text-slate-400">{fmtYearBE(log.date)}</span>
-                        </div>
+      {/* ── Chart 2: Doughnut ── */}
+      <div className="mx-4 mb-4 bg-white rounded-2xl p-4 shadow-[0_2px_12px_rgba(0,0,0,0.05)] border border-slate-100">
+        <h3 className="text-sm font-semibold text-slate-600 mb-3 flex items-center gap-2">
+          <PieChartIcon className="h-4 w-4 text-sky-500 shrink-0" />
+          สัดส่วนการชาร์จ
+        </h3>
+        {pieData.some(d => d.value > 0) ? (
+          <div className="h-44">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={pieData}
+                  cx="50%" cy="50%"
+                  innerRadius={42} outerRadius={68}
+                  paddingAngle={4}
+                  dataKey="value"
+                >
+                  {pieData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i]} />)}
+                </Pie>
+                <Tooltip
+                  formatter={(v) => `${Number(v).toLocaleString()} บาท`}
+                  contentStyle={{ fontSize: '11px', borderRadius: '10px', border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.12)' }}
+                />
+                <Legend wrapperStyle={{ fontSize: '10px' }} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        ) : (
+          <div className="h-32 flex items-center justify-center text-slate-400 text-sm">ไม่มีข้อมูล</div>
+        )}
+      </div>
 
-                        {/* Details */}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1.5 mb-1">
-                            <div className="w-5 h-5 rounded-md flex items-center justify-center shrink-0 bg-sky-50">
-                              {isHome
-                                ? <Home className="h-3 w-3 text-sky-500" strokeWidth={1.5} />
-                                : <MapPin className="h-3 w-3 text-sky-500" strokeWidth={1.5} />
-                              }
-                            </div>
-                            <span className="text-xs font-semibold text-slate-700">
-                              {isHome ? 'ชาร์จบ้าน' : 'สถานีชาร์จ'}
-                            </span>
-                          </div>
+      {/* ── Chart 3: Yearly Comparison (only when > 1 year of data) ── */}
+      {availableYears.length >= 1 && (
+        <div className="mx-4 mb-4 bg-white rounded-2xl p-4 shadow-[0_2px_12px_rgba(0,0,0,0.05)] border border-slate-100">
+          <h3 className="text-sm font-semibold text-slate-600 mb-3 flex items-center gap-2">
+            <BarChart2 className="h-4 w-4 text-amber-500 shrink-0" />
+            เปรียบเทียบรายปี (แยกรายปี)
+          </h3>
+          <div className="h-52">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={yearlyData} margin={{ top: 5, right: 5, left: -28, bottom: 5 }}>
+                <XAxis dataKey="name" stroke="#94a3b8" fontSize={9} tickLine={false} axisLine={false} />
+                <YAxis stroke="#94a3b8" fontSize={9} tickLine={false} axisLine={false} />
+                <Tooltip
+                  contentStyle={{ fontSize: '11px', borderRadius: '10px', border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.12)' }}
+                  cursor={{ fill: '#fffbeb' }}
+                />
+                <Legend wrapperStyle={{ fontSize: '10px', paddingTop: '6px' }} />
+                {availableYears.map((year, i) => (
+                  <Bar
+                    key={year}
+                    dataKey={String(year + 543)}
+                    fill={YEAR_COLORS[i % YEAR_COLORS.length]}
+                    radius={[3, 3, 0, 0]}
+                    maxBarSize={14}
+                  />
+                ))}
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
 
-                          {/* Details row: SOC for home or station */}
-                          {log.start_soc != null || log.end_soc != null ? (
-                            <div className="flex items-center gap-1 flex-wrap">
-                              {!isHome && log.station_name && (
-                                <span className="text-[10px] font-medium text-slate-700 mr-1 truncate max-w-[90px]">{log.station_name} •</span>
-                              )}
-                              {log.start_soc != null && (
-                                <span className="text-[10px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-600">Start {log.start_soc}%</span>
-                              )}
-                              {log.start_soc != null && log.end_soc != null && (
-                                <span className="text-[10px] text-slate-400">→</span>
-                              )}
-                              {log.end_soc != null && (
-                                <span className="text-[10px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-600">End {log.end_soc}%</span>
-                              )}
-                              {log.units != null && Number(log.units) > 0 && (
-                                <span className="text-[10px] text-sky-500 font-semibold ml-1">{Number(log.units).toFixed(1)} kWh</span>
-                              )}
-                            </div>
-                          ) : !isHome ? (
-                            <p className="text-[11px] font-medium text-slate-600 truncate">{log.station_name}</p>
-                          ) : null}
+      {/* ── History List (Reference Style) ── */}
+      <div className="px-4">
+        <div className="flex justify-between items-center mb-3">
+          <h3 className="font-bold text-slate-700 text-base">รายการล่าสุด</h3>
+          <span className="text-xs text-slate-400 bg-slate-100 px-2.5 py-1 rounded-full">
+            กดแก้ไขหรือลบ
+          </span>
+        </div>
 
-                          {/* Odometer & Distance badge */}
-                          {log.odometer != null && (
-                            <div className="flex items-center gap-1 text-[10px] text-slate-500 mt-1 flex-wrap">
-                              <span className="inline-flex items-center gap-0.5 text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded font-medium">
-                                <Gauge className="h-2.5 w-2.5 text-slate-400" />
-                                {Number(log.odometer).toLocaleString()} กม.
-                              </span>
-                              {log.distance != null && log.distance > 0 && (() => {
-                                const attrCpk = computeAttributedCostPerKm(log, logs);
-                                return (
-                                  <span className="inline-flex items-center gap-0.5 text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded font-semibold border border-emerald-100/60">
-                                    +{Number(log.distance).toLocaleString()} กม.
-                                    {attrCpk !== null ? (
-                                      <span className="text-teal-600 font-bold">
-                                        ({attrCpk.toFixed(2)} ฿/กม.✓)
-                                      </span>
-                                    ) : (
-                                      <span className="text-slate-400 font-normal">
-                                        ({(log.cost / log.distance).toFixed(2)} ฿/กม.)
-                                      </span>
-                                    )}
-                                  </span>
-                                );
-                              })()}
-                              {/* Legacy soc_before badge if no start_soc */}
-                              {!isHome && log.start_soc == null && log.soc_before != null && (
-                                <span className="inline-flex items-center gap-1 text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded font-medium">
-                                  แบตก่อนชาร์จ {log.soc_before}%
-                                </span>
-                              )}
-                            </div>
+        {filteredData.length === 0 ? (
+          <div className="flex flex-col items-center justify-center p-10 bg-white rounded-2xl border border-dashed border-slate-200 text-slate-400">
+            <FolderOpen className="h-10 w-10 mb-2 text-slate-300" />
+            <p className="text-sm">ไม่มีข้อมูลในช่วงเวลานี้</p>
+          </div>
+        ) : (
+          <div className="space-y-2.5 pb-4">
+            {filteredData.map(log => {
+              const isHome = log.type === 'home';
+              return (
+                <div
+                  key={log.id}
+                  className={`bg-white rounded-xl shadow-sm p-3.5 relative border-l-4 ${isHome ? 'border-l-sky-500' : 'border-l-sky-500'}`}
+                >
+                  <div className="flex items-center gap-3">
+                    {/* Date Box */}
+                    <div className="flex flex-col items-center justify-center bg-slate-50 rounded-xl py-2 px-2.5 min-w-[3.2rem] border border-slate-100 shrink-0">
+                      <span className="text-xl font-black text-slate-700 leading-none">{fmtDay(log.date)}</span>
+                      <span className="text-[10px] text-slate-500 mt-0.5">{fmtMonthS(log.date)}</span>
+                      <span className="text-[9px] text-slate-400">{fmtYearBE(log.date)}</span>
+                    </div>
+
+                    {/* Details */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5 mb-1">
+                      <div className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 ${isHome ? 'bg-sky-50' : 'bg-sky-50'}`}>
+                        {isHome
+                          ? <Home className="h-3.5 w-3.5 text-sky-500" strokeWidth={1.5} />
+                          : <MapPin className="h-3.5 w-3.5 text-sky-500" strokeWidth={1.5} />
+                        }
+                      </div>
+                      <span className="text-sm font-semibold text-slate-700">
+                        {isHome ? 'ชาร์จบ้าน' : 'สถานีชาร์จ'}
+                      </span>
+                    </div>
+                      {/* Details row: SOC for home or station */}
+                      {log.start_soc != null || log.end_soc != null ? (
+                        <div className="flex items-center gap-1 flex-wrap">
+                          {!isHome && log.station_name && (
+                            <span className="text-[11px] font-medium text-slate-700 mr-1">{log.station_name} •</span>
+                          )}
+                          {log.start_soc != null && (
+                            <span className="text-[10px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-600">Start {log.start_soc}%</span>
+                          )}
+                          {log.start_soc != null && log.end_soc != null && (
+                            <span className="text-[10px] text-slate-400">→</span>
+                          )}
+                          {log.end_soc != null && (
+                            <span className="text-[10px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-600">End {log.end_soc}%</span>
+                          )}
+                          {log.units != null && Number(log.units) > 0 && (
+                            <span className="text-[10px] text-sky-500 font-semibold ml-1">{Number(log.units).toFixed(1)} kWh</span>
                           )}
                         </div>
+                      ) : !isHome ? (
+                        <p className="text-[11px] font-medium text-slate-600 truncate">{log.station_name}</p>
+                      ) : null}
 
-                        {/* Cost + Actions */}
-                        <div className="flex flex-col items-end gap-1.5 shrink-0">
-                          <p className="text-sm font-black text-sky-500 leading-none">
-                            {parseFloat(String(log.cost)).toLocaleString('th-TH', { minimumFractionDigits: 2 })} ฿
-                          </p>
-                          <div className="flex gap-1">
-                            <button
-                              onClick={() => onEdit(log)}
-                              className="w-7 h-7 rounded-lg bg-amber-50 text-amber-500 hover:bg-amber-100 flex items-center justify-center transition-colors"
-                              title="แก้ไข"
-                            >
-                              <Edit2 className="h-3 w-3" strokeWidth={1.5} />
-                            </button>
-                            <button
-                              onClick={() => onDelete(log.id)}
-                              disabled={deletingId === log.id}
-                              className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors ${
-                                deletingId === log.id
-                                  ? 'bg-slate-100 text-slate-400'
-                                  : 'bg-red-50 text-red-500 hover:bg-red-100'
-                              }`}
-                              title="ลบ"
-                            >
-                              {deletingId === log.id ? (
-                                <div className="w-3 h-3 border-[2px] border-slate-300 border-t-slate-500 rounded-full animate-spin" />
-                              ) : (
-                                <Trash2 className="h-3 w-3" strokeWidth={1.5} />
-                              )}
-                            </button>
-                          </div>
+                      {/* Odometer & Distance badge */}
+                      {log.odometer != null && (
+                        <div className="flex items-center gap-1.5 text-[10px] text-slate-500 mt-1.5 flex-wrap">
+                          <span className="inline-flex items-center gap-1 text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded font-medium">
+                            <Gauge className="h-3 w-3 text-slate-400" />
+                            {Number(log.odometer).toLocaleString()} กม.
+                          </span>
+                          {log.distance != null && log.distance > 0 && (() => {
+                            const attrCpk = computeAttributedCostPerKm(log, logs);
+                            return (
+                              <span className="inline-flex items-center gap-1 text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded font-semibold border border-emerald-100/60">
+                                +{Number(log.distance).toLocaleString()} กม.
+                                {attrCpk !== null ? (
+                                  <span className="text-teal-600 font-bold">
+                                    ({attrCpk.toFixed(2)} ฿/กม.✓)
+                                  </span>
+                                ) : (
+                                  <span className="text-slate-400 font-normal">
+                                    ({(log.cost / log.distance).toFixed(2)} ฿/กม.)
+                                  </span>
+                                )}
+                              </span>
+                            );
+                          })()}
+                          {/* Show soc_before on legacy station logs if no start_soc */}
+                          {!isHome && log.start_soc == null && log.soc_before != null && (
+                            <span className="inline-flex items-center gap-1 text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded font-medium">
+                              แบตก่อนชาร์จ {log.soc_before}%
+                            </span>
+                          )}
                         </div>
+                      )}
+                    </div>
+
+                    {/* Cost + Actions */}
+                    <div className="flex flex-col items-end gap-1.5 shrink-0">
+                      <p className="text-base font-black text-sky-500 leading-none">
+                        {parseFloat(String(log.cost)).toLocaleString('th-TH', { minimumFractionDigits: 2 })} ฿
+                      </p>
+                      <div className="flex gap-1">
+                        <button
+                          onClick={() => onEdit(log)}
+                          className="w-8 h-8 rounded-lg bg-amber-50 text-amber-500 hover:bg-amber-100 flex items-center justify-center transition-colors"
+                          title="แก้ไข"
+                        >
+                          <Edit2 className="h-3.5 w-3.5" strokeWidth={1.5} />
+                        </button>
+                        <button
+                          onClick={() => onDelete(log.id)}
+                          disabled={deletingId === log.id}
+                          className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
+                            deletingId === log.id
+                              ? 'bg-slate-100 text-slate-400'
+                              : 'bg-red-50 text-red-500 hover:bg-red-100'
+                          }`}
+                          title="ลบ"
+                        >
+                          {deletingId === log.id ? (
+                            <div className="w-3.5 h-3.5 border-[2px] border-slate-300 border-t-slate-500 rounded-full animate-spin" />
+                          ) : (
+                            <Trash2 className="h-3.5 w-3.5" strokeWidth={1.5} />
+                          )}
+                        </button>
                       </div>
                     </div>
-                  );
-                })}
-              </div>
-            )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
-
-        {/* ── VIEW 2: กราฟสถิติ (Charts Mode) ── */}
-        {viewMode === 'charts' && (
-          <div className="space-y-4 pb-6">
-            {/* Chart 1: Stacked Bar */}
-            <div className="bg-white rounded-2xl p-3.5 shadow-xs border border-slate-100">
-              <h3 className="text-xs font-semibold text-slate-600 mb-2.5 flex items-center gap-1.5">
-                <TrendingUp className="h-3.5 w-3.5 text-sky-500 shrink-0" />
-                {chart1Title}
-              </h3>
-              <div className="h-44">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={chart1Data} margin={{ top: 5, right: 5, left: -28, bottom: 5 }}>
-                    <XAxis
-                      dataKey="name"
-                      stroke="#94a3b8"
-                      fontSize={filterMonth === 'all' ? 9 : 8}
-                      tickLine={false}
-                      axisLine={false}
-                      interval={filterMonth === 'all' ? 0 : 4}
-                    />
-                    <YAxis stroke="#94a3b8" fontSize={9} tickLine={false} axisLine={false} />
-                    <Tooltip
-                      contentStyle={{ fontSize: '11px', borderRadius: '10px', border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.12)' }}
-                      cursor={{ fill: '#f0fdf4' }}
-                    />
-                    <Legend wrapperStyle={{ fontSize: '10px', paddingTop: '4px' }} />
-                    <Bar dataKey="บ้าน" stackId="a" fill="#1D4ED8" maxBarSize={16} />
-                    <Bar dataKey="สถานี" stackId="a" fill="#3b82f6" radius={[3, 3, 0, 0]} maxBarSize={16} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-            {/* Chart 2: Doughnut */}
-            <div className="bg-white rounded-2xl p-3.5 shadow-xs border border-slate-100">
-              <h3 className="text-xs font-semibold text-slate-600 mb-2.5 flex items-center gap-1.5">
-                <PieChartIcon className="h-3.5 w-3.5 text-sky-500 shrink-0" />
-                สัดส่วนการชาร์จ
-              </h3>
-              {pieData.some(d => d.value > 0) ? (
-                <div className="h-40">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={pieData}
-                        cx="50%" cy="50%"
-                        innerRadius={38} outerRadius={62}
-                        paddingAngle={4}
-                        dataKey="value"
-                      >
-                        {pieData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i]} />)}
-                      </Pie>
-                      <Tooltip
-                        formatter={(v) => `${Number(v).toLocaleString()} บาท`}
-                        contentStyle={{ fontSize: '11px', borderRadius: '10px', border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.12)' }}
-                      />
-                      <Legend wrapperStyle={{ fontSize: '10px' }} />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-              ) : (
-                <div className="h-28 flex items-center justify-center text-slate-400 text-xs">ไม่มีข้อมูล</div>
-              )}
-            </div>
-
-            {/* Chart 3: Yearly Comparison */}
-            {availableYears.length >= 1 && (
-              <div className="bg-white rounded-2xl p-3.5 shadow-xs border border-slate-100">
-                <h3 className="text-xs font-semibold text-slate-600 mb-2.5 flex items-center gap-1.5">
-                  <BarChart2 className="h-3.5 w-3.5 text-amber-500 shrink-0" />
-                  เปรียบเทียบรายปี
-                </h3>
-                <div className="h-44">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={yearlyData} margin={{ top: 5, right: 5, left: -28, bottom: 5 }}>
-                      <XAxis dataKey="name" stroke="#94a3b8" fontSize={9} tickLine={false} axisLine={false} />
-                      <YAxis stroke="#94a3b8" fontSize={9} tickLine={false} axisLine={false} />
-                      <Tooltip
-                        contentStyle={{ fontSize: '11px', borderRadius: '10px', border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.12)' }}
-                        cursor={{ fill: '#fffbeb' }}
-                      />
-                      <Legend wrapperStyle={{ fontSize: '10px', paddingTop: '4px' }} />
-                      {availableYears.map((year, i) => (
-                        <Bar
-                          key={year}
-                          dataKey={String(year + 543)}
-                          fill={YEAR_COLORS[i % YEAR_COLORS.length]}
-                          radius={[3, 3, 0, 0]}
-                          maxBarSize={12}
-                        />
-                      ))}
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
       </div>
     </div>
   );

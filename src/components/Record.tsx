@@ -192,7 +192,7 @@ export const Record: React.FC<RecordProps> = ({
   const isEditing = editingLog !== null;
 
   return (
-    <div className="h-full overflow-y-auto overflow-x-hidden pt-3 pb-8">
+    <div className="pt-4 pb-12">
 
       {/* ── Edit Mode Banner ── */}
       {isEditing && (

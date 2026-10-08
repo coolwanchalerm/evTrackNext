@@ -2,20 +2,10 @@
 
 
 @layer base {
-  html, body, #root {
-    height: 100%;
-    width: 100%;
-    margin: 0;
-    padding: 0;
-    overflow: hidden;
-    overscroll-behavior: none;
-    -webkit-overflow-scrolling: touch;
-  }
   body {
     @apply bg-sky-50 text-slate-800 antialiased selection:bg-sky-200;
     font-family: 'IBM Plex Sans Thai', 'Noto Sans Thai', sans-serif;
     -webkit-tap-highlight-color: transparent;
-    touch-action: pan-y;
   }
 }
 
