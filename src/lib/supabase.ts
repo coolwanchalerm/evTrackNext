@@ -137,6 +137,7 @@ export const fetchLogs = async (): Promise<EvLog[]> => {
             ...dbRow,
             odometer: dbRow.odometer ?? local?.odometer ?? null,
             distance: dbRow.distance ?? local?.distance ?? null,
+            soc_before: dbRow.soc_before ?? local?.soc_before ?? null,
           };
         });
         setLocalLogs(dbLogs);
@@ -186,6 +187,7 @@ export const createLog = async (logData: Omit<EvLog, 'id' | 'created_at'>): Prom
         station_name: logData.station_name,
         odometer: logData.odometer ?? null,
         distance: logData.distance ?? null,
+        soc_before: logData.soc_before ?? null,
       };
 
       // Attempt insert with odometer & distance
@@ -195,7 +197,7 @@ export const createLog = async (logData: Omit<EvLog, 'id' | 'created_at'>): Prom
         .select();
 
       // If schema error (e.g. column odometer doesn't exist on remote DB yet), retry with base fields
-      if (error && (error.code === 'PGRST204' || error.message?.includes('odometer') || error.message?.includes('distance') || error.message?.includes('schema cache'))) {
+      if (error && (error.code === 'PGRST204' || error.message?.includes('odometer') || error.message?.includes('distance') || error.message?.includes('soc_before') || error.message?.includes('schema cache'))) {
         console.warn('Supabase ev_logs missing odometer/distance column, falling back to base columns:', error.message);
         const basePayload = {
           type: logData.type,
@@ -217,6 +219,7 @@ export const createLog = async (logData: Omit<EvLog, 'id' | 'created_at'>): Prom
           ...data[0],
           odometer: logData.odometer ?? data[0].odometer ?? null,
           distance: logData.distance ?? data[0].distance ?? null,
+          soc_before: logData.soc_before ?? data[0].soc_before ?? null,
         };
         const updatedLogs = getLocalLogs().map(l => l.id === newId ? dbLog : l);
         setLocalLogs(updatedLogs);
@@ -250,6 +253,7 @@ export const updateLog = async (id: number, logData: Omit<EvLog, 'id' | 'created
         station_name: logData.station_name,
         odometer: logData.odometer ?? null,
         distance: logData.distance ?? null,
+        soc_before: logData.soc_before ?? null,
       };
 
       let { data, error } = await supabaseClient
@@ -259,7 +263,7 @@ export const updateLog = async (id: number, logData: Omit<EvLog, 'id' | 'created
         .select();
 
       // If schema error, fallback to base columns
-      if (error && (error.code === 'PGRST204' || error.message?.includes('odometer') || error.message?.includes('distance') || error.message?.includes('schema cache'))) {
+      if (error && (error.code === 'PGRST204' || error.message?.includes('odometer') || error.message?.includes('distance') || error.message?.includes('soc_before') || error.message?.includes('schema cache'))) {
         console.warn('Supabase ev_logs missing odometer/distance column, falling back to base columns:', error.message);
         const basePayload = {
           type: logData.type,
@@ -284,6 +288,7 @@ export const updateLog = async (id: number, logData: Omit<EvLog, 'id' | 'created
           ...data[0],
           odometer: logData.odometer ?? data[0].odometer ?? null,
           distance: logData.distance ?? data[0].distance ?? null,
+          soc_before: logData.soc_before ?? data[0].soc_before ?? null,
         };
         return dbLog;
       }
@@ -393,6 +398,7 @@ export const syncLocalToSupabase = async (): Promise<{ success: boolean; count: 
       station_name: log.station_name,
       odometer: log.odometer ?? null,
       distance: log.distance ?? null,
+      soc_before: log.soc_before ?? null,
       created_at: log.created_at
     }));
 

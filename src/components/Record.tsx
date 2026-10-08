@@ -23,6 +23,7 @@ export const Record: React.FC<RecordProps> = ({
   const [endSoc, setEndSoc] = useState('');
   const [stationName, setStationName] = useState('');
   const [stationCost, setStationCost] = useState('');
+  const [socBefore, setSocBefore] = useState(''); // % แบตก่อนชาร์จสถานี
   const [odometer, setOdometer] = useState('');
   const [showAutocomplete, setShowAutocomplete] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -47,9 +48,11 @@ export const Record: React.FC<RecordProps> = ({
         setEndSoc(String(editingLog.end_soc ?? ''));
         setStationName('');
         setStationCost('');
+        setSocBefore('');
       } else {
         setStationName(editingLog.station_name ?? '');
         setStationCost(String(editingLog.cost));
+        setSocBefore(editingLog.soc_before != null ? String(editingLog.soc_before) : '');
         setStartSoc('');
         setEndSoc('');
       }
@@ -62,6 +65,7 @@ export const Record: React.FC<RecordProps> = ({
       setEndSoc('');
       setStationName('');
       setStationCost('');
+      setSocBefore('');
       setOdometer('');
     }
     setStatus(null);
@@ -115,6 +119,8 @@ export const Record: React.FC<RecordProps> = ({
     const odoVal = odometer.trim() !== '' && !isNaN(parseFloat(odometer)) ? parseFloat(odometer) : null;
     const distVal = calculatedDistance !== null && calculatedDistance > 0 ? calculatedDistance : null;
 
+    const socBeforeVal = socBefore.trim() !== '' && !isNaN(parseFloat(socBefore)) ? parseFloat(socBefore) : null;
+
     try {
       if (chargeType === 'home') {
         const s = parseFloat(startSoc);
@@ -133,6 +139,7 @@ export const Record: React.FC<RecordProps> = ({
           station_name: null,
           odometer: odoVal,
           distance: distVal,
+          soc_before: null,
         };
 
         if (editingLog) {
@@ -159,6 +166,7 @@ export const Record: React.FC<RecordProps> = ({
           station_name: stationName.trim(),
           odometer: odoVal,
           distance: distVal,
+          soc_before: socBeforeVal,
         };
 
         if (editingLog) {
@@ -419,6 +427,28 @@ export const Record: React.FC<RecordProps> = ({
                     onChange={e => setStationCost(e.target.value)}
                     className="w-full p-3 border border-slate-200 rounded-xl text-center font-black text-2xl text-slate-800 bg-slate-50 focus:outline-none focus:border-sky-400 focus:bg-white transition-all"
                   />
+                </div>
+
+                {/* SOC Before — optional, for accurate cost/km */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-xs font-semibold text-slate-500">% แบตก่อนชาร์จ</label>
+                    <span className="text-[10px] text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full font-medium">ไม่บังคับ</span>
+                  </div>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="1"
+                      placeholder="เช่น 30"
+                      value={socBefore}
+                      onChange={e => setSocBefore(clampSoc(e.target.value))}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-bold text-slate-800 placeholder:text-slate-300 focus:outline-none focus:border-sky-400 focus:bg-white transition-all"
+                    />
+                    <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-400">%</span>
+                  </div>
+                  <p className="text-[10px] text-slate-400 mt-1">กรอกเพื่อคำนวณ บาท/กม. ที่แม่นยำขึ้น</p>
                 </div>
               </div>
             </div>

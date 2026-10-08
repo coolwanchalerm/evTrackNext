@@ -9,6 +9,7 @@ export interface EvLog {
   station_name: string | null;
   odometer?: number | null;
   distance?: number | null;
+  soc_before?: number | null; // % แบตก่อนชาร์จ (สำหรับ station log)
   created_at: string;
 }
 

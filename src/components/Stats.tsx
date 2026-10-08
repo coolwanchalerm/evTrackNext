@@ -17,6 +17,46 @@ const MONTH_FULL = ['มกราคม','กุมภาพันธ์','ม�
 const MONTH_SHORT = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
 const YEAR_COLORS = ['#0EA5E9', '#1D4ED8', '#f59e0b', '#8b5cf6', '#ef4444'];
 
+/**
+ * คำนวณ บาท/กม. แบบแม่นยำโดยอ้างอิงจาก "source charge" (การชาร์จก่อนหน้าที่ใกล้สุด)
+ *
+ * สูตร:
+ *   - ชาร์จบ้าน (home): soc_used = end_soc - start_soc (SOC ที่ชาร์จครั้งนี้)
+ *     → ต้นทุน = (soc_used / soc_available_prev) × cost_prev
+ *   - ชาร์จสถานี (station): soc_used = end_soc_prev - soc_before (SOC ที่วิ่งมาจาก source)
+ *     → ต้นทุน = (soc_used / soc_available_prev) × cost_prev
+ */
+function computeAttributedCostPerKm(log: EvLog, allLogs: EvLog[]): number | null {
+  if (!log.odometer || !log.distance || log.distance <= 0) return null;
+
+  // หา source charge = log ก่อนหน้าที่ใกล้ที่สุด (sort by date desc, then id desc)
+  const prev = allLogs
+    .filter(l => l.id !== log.id && (l.date < log.date || (l.date === log.date && l.id < log.id)))
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime() || b.id - a.id)[0];
+
+  if (!prev) return null;
+
+  const socAvailPrev = (prev.end_soc ?? 0) - (prev.start_soc ?? 0); // % ที่ source charge ให้มา
+  if (socAvailPrev <= 0) return null;
+
+  let socUsed: number | null = null;
+
+  if (log.type === 'home' && log.start_soc != null && log.end_soc != null) {
+    // ชาร์จบ้าน: ใช้ SOC ของตัวเอง (ไฟที่ชาร์จครั้งนี้ = ไฟที่ใช้วิ่งมาก่อนชาร์จ)
+    socUsed = log.end_soc - log.start_soc;
+  } else if (log.type === 'station' && log.soc_before != null && prev.end_soc != null) {
+    // ชาร์จสถานี: วิ่งมาจาก end_soc_prev ลงมาถึง soc_before
+    socUsed = (prev.end_soc ?? 0) - log.soc_before;
+  }
+
+  if (socUsed == null || socUsed <= 0) return null;
+
+  const attributedCost = (socUsed / socAvailPrev) * prev.cost;
+  return attributedCost / log.distance;
+}
+
+
+
 export const Stats: React.FC<StatsProps> = ({ logs, onEdit, onDelete, deletingId }) => {
   const now = new Date();
   const [filterType, setFilterType] = useState<'all' | 'home' | 'station'>('all');
@@ -418,12 +458,27 @@ export const Stats: React.FC<StatsProps> = ({ logs, onEdit, onDelete, deletingId
                             <Gauge className="h-3 w-3 text-slate-400" />
                             {Number(log.odometer).toLocaleString()} กม.
                           </span>
-                          {log.distance != null && log.distance > 0 && (
-                            <span className="inline-flex items-center gap-1 text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded font-semibold border border-emerald-100/60">
-                              +{Number(log.distance).toLocaleString()} กม.
-                              <span className="text-emerald-600 font-normal">
-                                ({(log.cost / log.distance).toFixed(2)} ฿/กม.)
+                          {log.distance != null && log.distance > 0 && (() => {
+                            const attrCpk = computeAttributedCostPerKm(log, logs);
+                            return (
+                              <span className="inline-flex items-center gap-1 text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded font-semibold border border-emerald-100/60">
+                                +{Number(log.distance).toLocaleString()} กม.
+                                {attrCpk !== null ? (
+                                  <span className="text-teal-600 font-bold">
+                                    ({attrCpk.toFixed(2)} ฿/กม.✓)
+                                  </span>
+                                ) : (
+                                  <span className="text-slate-400 font-normal">
+                                    ({(log.cost / log.distance).toFixed(2)} ฿/กม.)
+                                  </span>
+                                )}
                               </span>
+                            );
+                          })()}
+                          {/* Show soc_before on station logs */}
+                          {!isHome && log.soc_before != null && (
+                            <span className="inline-flex items-center gap-1 text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded font-medium">
+                              แบตก่อนชาร์จ {log.soc_before}%
                             </span>
                           )}
                         </div>
